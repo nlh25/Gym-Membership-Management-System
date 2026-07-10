@@ -1,0 +1,40 @@
+@page "/payment-create"
+@using Microsoft.AspNetCore.Components.Forms
+
+<h3>Create Payment</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <EditForm Model="request" OnSubmit="Save">
+            <div class="mb-3">
+                <label for="membershipId" class="form-label">Membership ID</label>
+                <InputNumber id="membershipId" class="form-control" @bind-Value="request.MembershipId" />
+            </div>
+            <div class="mb-3">
+                <label for="paymentMethodId" class="form-label">Payment Method ID</label>
+                <InputNumber id="paymentMethodId" class="form-control" @bind-Value="request.PaymentMethodId" />
+            </div>
+            <div class="mb-3">
+                <label for="amount" class="form-label">Amount</label>
+                <InputNumber id="amount" class="form-control" @bind-Value="request.Amount" />
+            </div>
+            <div class="mb-3">
+                <label for="sspath" class="form-label">SS Path</label>
+                <InputText id="sspath" class="form-control" @bind-Value="request.Sspath" />
+            </div>
+            <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                }
+                Save
+            </button>
+            <a class="btn btn-secondary ms-2" href="payment-list">Cancel</a>
+        </EditForm>
+    </div>
+</div>

@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="GMMS.Api/GMMS.Api.csproj" />
+  <Project Path="GMMS.App/GMMS.App.csproj" Id="fb4562fd-a4c5-4422-b1c1-6834400e2b95" />
+  <Project Path="GMMS.Database/GMMS.Database.csproj" />
+  <Project Path="GMMS.Domain/GMMS.Domain.csproj" />
+</Solution>

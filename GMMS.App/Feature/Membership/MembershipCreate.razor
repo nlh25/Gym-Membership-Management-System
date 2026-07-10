@@ -1,0 +1,82 @@
+@page "/membership-create"
+@using Microsoft.AspNetCore.Components.Forms
+
+<h3>Create Membership</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (isLoadingData)
+{
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-6">
+            <EditForm Model="request" OnSubmit="Save">
+                <div class="mb-3">
+                    <label for="memberId" class="form-label">Member</label>
+                    <InputSelect id="memberId" class="form-select" @bind-Value="request.MemberId">
+                        <option value="0">-- Select Member --</option>
+                        @if (members is not null)
+                        {
+                            @foreach (var m in members)
+                            {
+                                <option value="@m.MemberId">@m.Name (@m.MemberCode)</option>
+                            }
+                        }
+                    </InputSelect>
+                </div>
+                <div class="mb-3">
+                    <label for="membershipPlanId" class="form-label">Membership Plan</label>
+                    <InputSelect id="membershipPlanId" class="form-select" @bind-Value="request.MembershipPlanId">
+                        <option value="0">-- Select Plan --</option>
+                        @if (plans is not null)
+                        {
+                            @foreach (var p in plans)
+                            {
+                                <option value="@p.MemberShipPlanId">@p.PlanName (@p.PlanCode) - @p.Price.ToString("C")</option>
+                            }
+                        }
+                    </InputSelect>
+                </div>
+                <div class="mb-3">
+                    <label for="paymentMethodId" class="form-label">Payment Method</label>
+                    <InputSelect id="paymentMethodId" class="form-select" @bind-Value="request.PaymentMethodId">
+                        <option value="0">-- Select Payment Method --</option>
+                        @if (paymentMethods is not null)
+                        {
+                            @foreach (var pm in paymentMethods)
+                            {
+                                <option value="@pm.PaymentMethodId">@pm.Name</option>
+                            }
+                        }
+                    </InputSelect>
+                </div>
+                <div class="mb-3">
+                    <label for="amount" class="form-label">Amount</label>
+                    <InputNumber id="amount" class="form-control" @bind-Value="request.Amount" />
+                </div>
+                <div class="mb-3">
+                    <label for="sspath" class="form-label">SS Path (Receipt/Screenshot)</label>
+                    <InputText id="sspath" class="form-control" @bind-Value="request.Sspath" />
+                </div>
+                <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                    @if (isSaving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    Save
+                </button>
+                <a class="btn btn-secondary ms-2" href="membership-list">Cancel</a>
+            </EditForm>
+        </div>
+    </div>
+}

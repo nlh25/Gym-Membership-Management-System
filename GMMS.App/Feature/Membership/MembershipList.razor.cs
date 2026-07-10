@@ -1,0 +1,69 @@
+using GMMS.App.Services;
+using GMMS.Domain;
+using GMMS.Domain.Features.MemberShip.Models;
+using Microsoft.AspNetCore.Components;
+
+namespace GMMS.App.Feature.Membership
+{
+    public partial class MembershipList : ComponentBase
+    {
+        [Inject]
+        private ApiService ApiService { get; set; } = null!;
+
+        [SupplyParameterFromQuery(Name = "page")]
+        public int Page { get; set; } = 1;
+
+        [SupplyParameterFromQuery(Name = "memberId")]
+        public int? MemberId { get; set; }
+
+        private List<MemberShipModel>? memberships;
+        private int pageNumber = 1;
+        private int pageSize = 10;
+        private int totalCount;
+        private int totalPages;
+        private bool isLoading;
+        private string? errorMessage;
+        private int? _previousMemberId;
+
+        protected override async Task OnParametersSetAsync()
+        {
+            if (Page < 1) Page = 1;
+            if (memberships is null || Page != pageNumber || MemberId != _previousMemberId)
+            {
+                await LoadPage(Page);
+            }
+        }
+
+        private async Task LoadPage(int page)
+        {
+            isLoading = true;
+            errorMessage = null;
+            pageNumber = page;
+
+            try
+            {
+                var result = await ApiService.GetMembershipListAsync<Result<MemberShipListResponseModel>>(pageNumber, pageSize, MemberId);
+                if (result?.IsSuccess == true && result.Data is not null)
+                {
+                    memberships = result.Data.MemberShips;
+                    totalCount = result.Data.TotalCount;
+                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+                    if (totalPages < 1) totalPages = 1;
+                }
+                else
+                {
+                    errorMessage = result?.Message ?? "Failed to load memberships.";
+                }
+            }
+            catch (Exception ex)
+            {
+                errorMessage = ex.Message;
+            }
+            finally
+            {
+                _previousMemberId = MemberId;
+                isLoading = false;
+            }
+        }
+    }
+}

@@ -1,0 +1,33 @@
+@page "/member-create"
+@using Microsoft.AspNetCore.Components.Forms
+
+<h3>Create Member</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+
+<div class="row">
+    <div class="col-md-6">
+        <EditForm Model="request" OnSubmit="Save">
+            <div class="mb-3">
+                <label for="memberCode" class="form-label">Member Code</label>
+                <InputText id="memberCode" class="form-control" @bind-Value="request.MemberCode" />
+            </div>
+            <div class="mb-3">
+                <label for="name" class="form-label">Name</label>
+                <InputText id="name" class="form-control" @bind-Value="request.Name" />
+            </div>
+            <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                }
+                Save
+            </button>
+            <a class="btn btn-secondary ms-2" href="member-list">Cancel</a>
+        </EditForm>
+    </div>
+</div>

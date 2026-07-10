@@ -1,0 +1,39 @@
+@page "/membership-edit/{id:int}"
+@using Microsoft.AspNetCore.Components.Forms
+
+<h3>Edit Membership</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-6">
+            <EditForm Model="request" OnSubmit="Update">
+                <div class="mb-3">
+                    <label for="memberId" class="form-label">Member ID</label>
+                    <InputNumber id="memberId" class="form-control" @bind-Value="request.MembershipId" disabled />
+                </div>
+                <div class="mb-3">
+                    <label for="membershipPlanId" class="form-label">Membership Plan ID</label>
+                    <InputNumber id="membershipPlanId" class="form-control" @bind-Value="request.MembershipPlanId" />
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    Update
+                </button>
+                <a class="btn btn-secondary ms-2" href="membership-list">Cancel</a>
+            </EditForm>
+        </div>
+    </div>
+}

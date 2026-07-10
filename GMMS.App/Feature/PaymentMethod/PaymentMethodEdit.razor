@@ -1,0 +1,43 @@
+@page "/paymentmethod-edit/{id:int}"
+@using Microsoft.AspNetCore.Components.Forms
+
+<h3>Edit Payment Method</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-6">
+            <EditForm Model="request" OnSubmit="Update">
+                <div class="mb-3">
+                    <label for="code" class="form-label">Payment Method Code</label>
+                    <InputText id="code" class="form-control" @bind-Value="request.PaymentMethodCode" />
+                </div>
+                <div class="mb-3">
+                    <label for="name" class="form-label">Name</label>
+                    <InputText id="name" class="form-control" @bind-Value="request.Name" />
+                </div>
+                <div class="mb-3 form-check">
+                    <InputCheckbox id="isActive" class="form-check-input" @bind-Value="request.IsActive" />
+                    <label for="isActive" class="form-check-label">Active</label>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    Update
+                </button>
+                <a class="btn btn-secondary ms-2" href="paymentmethod-list">Cancel</a>
+            </EditForm>
+        </div>
+    </div>
+}
