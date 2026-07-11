@@ -17,6 +17,9 @@ namespace GMMS.Api.Controllers
         [HttpGet]
         public IActionResult Memberlist([FromQuery] MemberShipListRequestModel request)
         {
+            if (request.MemberId <= 0)
+                return BadRequest("MemberId is required.");
+
             var result = _memberShipService.GetList(request);
             return Execute(result);
         }

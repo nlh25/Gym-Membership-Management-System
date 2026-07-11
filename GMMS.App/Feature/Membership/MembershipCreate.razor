@@ -1,5 +1,4 @@
 @page "/membership-create"
-@using Microsoft.AspNetCore.Components.Forms
 
 <h3>Create Membership</h3>
 
@@ -20,53 +19,49 @@ else
 {
     <div class="row">
         <div class="col-md-6">
-            <EditForm Model="request" OnSubmit="Save">
+            <EditForm Model="request" OnValidSubmit="Save">
                 <div class="mb-3">
                     <label for="memberId" class="form-label">Member</label>
-                    <InputSelect id="memberId" class="form-select" @bind-Value="request.MemberId">
-                        <option value="0">-- Select Member --</option>
+                    <select id="memberId" class="form-select" @bind-value="_memberIdStr" @bind-value:event="onchange">
+                        <option value="">-- Select Member --</option>
                         @if (members is not null)
                         {
-                            @foreach (var m in members)
+                            @foreach (var member in members)
                             {
-                                <option value="@m.MemberId">@m.Name (@m.MemberCode)</option>
+                                <option value="@member.MemberId">@member.Name (@member.MemberCode)</option>
                             }
                         }
-                    </InputSelect>
+                    </select>
                 </div>
                 <div class="mb-3">
-                    <label for="membershipPlanId" class="form-label">Membership Plan</label>
-                    <InputSelect id="membershipPlanId" class="form-select" @bind-Value="request.MembershipPlanId">
-                        <option value="0">-- Select Plan --</option>
+                    <label for="planId" class="form-label">Plan</label>
+                    <select id="planId" class="form-select" @bind-value="_planIdStr" @bind-value:event="onchange">
+                        <option value="">-- Select Plan --</option>
                         @if (plans is not null)
                         {
-                            @foreach (var p in plans)
+                            @foreach (var plan in plans)
                             {
-                                <option value="@p.MemberShipPlanId">@p.PlanName (@p.PlanCode) - @p.Price.ToString("C")</option>
+                                <option value="@plan.MemberShipPlanId">@plan.PlanName</option>
                             }
                         }
-                    </InputSelect>
+                    </select>
                 </div>
                 <div class="mb-3">
                     <label for="paymentMethodId" class="form-label">Payment Method</label>
-                    <InputSelect id="paymentMethodId" class="form-select" @bind-Value="request.PaymentMethodId">
-                        <option value="0">-- Select Payment Method --</option>
+                    <select id="paymentMethodId" class="form-select" @bind-value="_paymentMethodIdStr" @bind-value:event="onchange">
+                        <option value="">-- Select Payment Method --</option>
                         @if (paymentMethods is not null)
                         {
-                            @foreach (var pm in paymentMethods)
+                            @foreach (var method in paymentMethods)
                             {
-                                <option value="@pm.PaymentMethodId">@pm.Name</option>
+                                <option value="@method.PaymentMethodId">@method.Name</option>
                             }
                         }
-                    </InputSelect>
+                    </select>
                 </div>
                 <div class="mb-3">
                     <label for="amount" class="form-label">Amount</label>
                     <InputNumber id="amount" class="form-control" @bind-Value="request.Amount" />
-                </div>
-                <div class="mb-3">
-                    <label for="sspath" class="form-label">SS Path (Receipt/Screenshot)</label>
-                    <InputText id="sspath" class="form-control" @bind-Value="request.Sspath" />
                 </div>
                 <button type="submit" class="btn btn-primary" disabled="@isSaving">
                     @if (isSaving)
@@ -75,7 +70,7 @@ else
                     }
                     Save
                 </button>
-                <a class="btn btn-secondary ms-2" href="membership-list">Cancel</a>
+                <a class="btn btn-secondary ms-2" href="member-list">Cancel</a>
             </EditForm>
         </div>
     </div>

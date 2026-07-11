@@ -1,5 +1,20 @@
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.mud-main-content {
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.mud-main-content::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
 }
 
 a, .btn-link {

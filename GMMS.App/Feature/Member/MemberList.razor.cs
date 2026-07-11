@@ -2,11 +2,10 @@ using GMMS.App.Services;
 using GMMS.Domain;
 using GMMS.Domain.Features.Member.Models;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 
 namespace GMMS.App.Feature.Member
 {
-    public partial class MemberList : ComponentBase
+    public partial class MemberList : ComponentBase, IDisposable
     {
         [Inject]
         private ApiService ApiService { get; set; } = null!;
@@ -22,24 +21,70 @@ namespace GMMS.App.Feature.Member
         private bool isLoading;
         private string? errorMessage;
 
+        private int _pageSelected = 1;
+        private CancellationTokenSource? _searchCts;
+
+        private string? _searchTerm;
+        private string? searchTerm
+        {
+            get => _searchTerm;
+            set
+            {
+                if (_searchTerm == value) return;
+                _searchTerm = value;
+                DebounceSearch();
+            }
+        }
+
+        private async void DebounceSearch()
+        {
+            _searchCts?.Cancel();
+            _searchCts?.Dispose();
+            _searchCts = new CancellationTokenSource();
+            var token = _searchCts.Token;
+
+            try
+            {
+                await Task.Delay(300, token);
+                if (!token.IsCancellationRequested)
+                {
+                    await LoadPage(1, false);
+                }
+            }
+            catch (TaskCanceledException)
+            {
+            }
+        }
+
         protected override async Task OnParametersSetAsync()
         {
             if (Page < 1) Page = 1;
+            _pageSelected = Page;
             if (members is null || Page != pageNumber)
             {
                 await LoadPage(Page);
             }
         }
 
-        private async Task LoadPage(int page)
+        private async Task PageChanged(int page)
         {
-            isLoading = true;
+            _pageSelected = page;
+            await LoadPage(page);
+        }
+
+        private async Task LoadPage(int page, bool showLoading = true)
+        {
             errorMessage = null;
             pageNumber = page;
 
+            if (showLoading)
+            {
+                isLoading = true;
+            }
+
             try
             {
-                var result = await ApiService.GetMemberListAsync<Result<MemberListResponseModel>>(pageNumber, pageSize);
+                var result = await ApiService.GetMemberListAsync<Result<MemberListResponseModel>>(pageNumber, pageSize, _searchTerm);
                 if (result?.IsSuccess == true && result.Data is not null)
                 {
                     members = result.Data.Members;
@@ -60,6 +105,12 @@ namespace GMMS.App.Feature.Member
             {
                 isLoading = false;
             }
+        }
+
+        public void Dispose()
+        {
+            _searchCts?.Cancel();
+            _searchCts?.Dispose();
         }
     }
 }

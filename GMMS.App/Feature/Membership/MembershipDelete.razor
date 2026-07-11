@@ -17,14 +17,12 @@
 }
 else if (membership is not null)
 {
-    <div class="card" style="max-width: 400px;">
+    <div class="card" style="max-width: 500px;">
         <div class="card-body">
-            <h5 class="card-title">@membership.MemberName - @membership.PlanName</h5>
+            <h5 class="card-title">@membership.MemberName — @membership.PlanName</h5>
             <p class="card-text">
-                <strong>Member Code:</strong> @membership.MemberCode<br />
-                <strong>Plan Code:</strong> @membership.PlanCode<br />
-                <strong>Start Date:</strong> @membership.StartDate.ToString("yyyy-MM-dd")<br />
-                <strong>End Date:</strong> @membership.EndDate.ToString("yyyy-MM-dd")<br />
+                <strong>Start:</strong> @membership.StartDate.ToString("yyyy-MM-dd")<br />
+                <strong>End:</strong> @membership.EndDate.ToString("yyyy-MM-dd")<br />
                 <strong>Status:</strong> @membership.Status
             </p>
             <div class="alert alert-warning">
@@ -38,7 +36,7 @@ else if (membership is not null)
                     }
                     Yes, Delete
                 </button>
-                <a class="btn btn-secondary" href="membership-list">Cancel</a>
+                <a class="btn btn-secondary" href="membership-list?memberId=@MemberId">Cancel</a>
             </EditForm>
         </div>
     </div>

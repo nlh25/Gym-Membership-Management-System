@@ -1,5 +1,4 @@
 @page "/paymentmethod-create"
-@using Microsoft.AspNetCore.Components.Forms
 
 <h3>Create Payment Method</h3>
 
@@ -10,10 +9,10 @@
 
 <div class="row">
     <div class="col-md-6">
-        <EditForm Model="request" OnSubmit="Save">
+        <EditForm Model="request" OnValidSubmit="Save">
             <div class="mb-3">
-                <label for="code" class="form-label">Payment Method Code</label>
-                <InputText id="code" class="form-control" @bind-Value="request.PaymentMethodCode" />
+                <label for="paymentMethodCode" class="form-label">Payment Method Code</label>
+                <InputText id="paymentMethodCode" class="form-control" @bind-Value="request.PaymentMethodCode" />
             </div>
             <div class="mb-3">
                 <label for="name" class="form-label">Name</label>

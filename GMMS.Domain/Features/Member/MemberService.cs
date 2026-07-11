@@ -32,6 +32,12 @@ namespace GMMS.Domain.Features.Member
                     .AsNoTracking()
                     .Where(x => !x.IsDeleted);
 
+                if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+                {
+                    var search = request.SearchTerm.Trim().ToLower();
+                    query = query.Where(x => x.MemberCode.ToLower().Contains(search) || x.Name.ToLower().Contains(search));
+                }
+
                 var totalCount = query.Count();
 
                 var members = query

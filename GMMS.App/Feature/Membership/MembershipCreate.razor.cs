@@ -16,6 +16,9 @@ namespace GMMS.App.Feature.Membership
         [Inject]
         private NavigationManager Navigation { get; set; } = null!;
 
+        [SupplyParameterFromQuery(Name = "memberId")]
+        public int MemberId { get; set; }
+
         private CreateMemberShipRequestModel request = new();
         private List<MemberModel>? members;
         private List<MemberShipPlanModel>? plans;
@@ -24,10 +27,20 @@ namespace GMMS.App.Feature.Membership
         private bool isSaving;
         private string? errorMessage;
 
+        private string _memberIdStr { get; set; } = "";
+        private string _planIdStr { get; set; } = "";
+        private string _paymentMethodIdStr { get; set; } = "";
+
         protected override async Task OnInitializedAsync()
         {
             try
             {
+                if (MemberId > 0)
+                {
+                    request.MemberId = MemberId;
+                    _memberIdStr = MemberId.ToString();
+                }
+
                 var memberResult = await ApiService.GetMemberListAsync<Result<MemberListResponseModel>>(1, 1000);
                 if (memberResult?.IsSuccess == true && memberResult.Data is not null)
                     members = memberResult.Data.Members;
@@ -52,6 +65,30 @@ namespace GMMS.App.Feature.Membership
 
         private async Task Save()
         {
+            int.TryParse(_memberIdStr, out var memberId);
+            int.TryParse(_planIdStr, out var planId);
+            int.TryParse(_paymentMethodIdStr, out var paymentMethodId);
+
+            request.MemberId = memberId;
+            request.MembershipPlanId = planId;
+            request.PaymentMethodId = paymentMethodId;
+
+            if (request.MemberId <= 0)
+            {
+                errorMessage = "Please select a member.";
+                return;
+            }
+            if (request.MembershipPlanId <= 0)
+            {
+                errorMessage = "Please select a membership plan.";
+                return;
+            }
+            if (request.PaymentMethodId <= 0)
+            {
+                errorMessage = "Please select a payment method.";
+                return;
+            }
+
             isSaving = true;
             errorMessage = null;
 
@@ -61,7 +98,7 @@ namespace GMMS.App.Feature.Membership
 
                 if (result?.IsSuccess == true)
                 {
-                    Navigation.NavigateTo("/membership-list");
+                    Navigation.NavigateTo($"/membership-list?memberId={request.MemberId}");
                 }
                 else
                 {

@@ -10,9 +10,11 @@
         }
 
         #region Member
-        public async Task<TResponse?> GetMemberListAsync<TResponse>(int pageNumber = 1, int pageSize = 10)
+        public async Task<TResponse?> GetMemberListAsync<TResponse>(int pageNumber = 1, int pageSize = 10, string? searchTerm = null)
         {
             var endpoint = $"{ApiEndpoints.MemberList}?pageNumber={pageNumber}&pageSize={pageSize}";
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+                endpoint += $"&searchTerm={Uri.EscapeDataString(searchTerm)}";
             return await _http.GetAsync<TResponse>(endpoint);
         }
 
@@ -41,11 +43,9 @@
         #endregion
 
         #region Membership
-        public async Task<TResponse?> GetMembershipListAsync<TResponse>(int pageNumber = 1, int pageSize = 10, int? memberId = null)
+        public async Task<TResponse?> GetMembershipListAsync<TResponse>(int memberId, int pageNumber = 1, int pageSize = 10)
         {
-            var endpoint = $"{ApiEndpoints.MembershipList}?pageNumber={pageNumber}&pageSize={pageSize}";
-            if (memberId.HasValue)
-                endpoint += $"&memberId={memberId.Value}";
+            var endpoint = $"{ApiEndpoints.MembershipList}?pageNumber={pageNumber}&pageSize={pageSize}&memberId={memberId}";
             return await _http.GetAsync<TResponse>(endpoint);
         }
 

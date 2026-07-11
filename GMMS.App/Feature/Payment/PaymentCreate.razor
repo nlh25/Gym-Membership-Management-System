@@ -1,5 +1,4 @@
 @page "/payment-create"
-@using Microsoft.AspNetCore.Components.Forms
 
 <h3>Create Payment</h3>
 
@@ -10,7 +9,7 @@
 
 <div class="row">
     <div class="col-md-6">
-        <EditForm Model="request" OnSubmit="Save">
+        <EditForm Model="request" OnValidSubmit="Save">
             <div class="mb-3">
                 <label for="membershipId" class="form-label">Membership ID</label>
                 <InputNumber id="membershipId" class="form-control" @bind-Value="request.MembershipId" />

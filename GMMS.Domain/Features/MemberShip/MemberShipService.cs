@@ -28,10 +28,7 @@ namespace GMMS.Domain.Features.MemberShip
                     request.PageSize = 10;
                 var query = _db.TblMemberships
                     .AsNoTracking()
-                    .Where(x => !x.IsDeleted);
-
-                if (request.MemberId.HasValue)
-                    query = query.Where(x => x.MemberId == request.MemberId.Value);
+                    .Where(x => !x.IsDeleted && x.MemberId == request.MemberId);
 
                 var totalCount = query.Count();
 
@@ -253,6 +250,7 @@ namespace GMMS.Domain.Features.MemberShip
             try
             {
                 var membership = _db.TblMemberships
+                    .Include(x => x.Member)
                     .FirstOrDefault(x => !x.IsDeleted && x.MembershipId == request.MembershipId);
                 if (membership == null)
                 {

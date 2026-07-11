@@ -17,4 +17,8 @@
     <ProjectReference Include="..\GMMS.Domain\GMMS.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MudBlazor" Version="9.7.0" />
+  </ItemGroup>
+
 </Project>

@@ -20,7 +20,7 @@ else
 {
     <div class="row">
         <div class="col-md-6">
-            <EditForm Model="request" OnSubmit="Update">
+            <EditForm Model="request" OnValidSubmit="Update">
                 <div class="mb-3">
                     <label for="memberCode" class="form-label">Member Code</label>
                     <InputText id="memberCode" class="form-control" @bind-Value="request.MemberCode" />

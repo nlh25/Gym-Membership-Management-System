@@ -10,7 +10,7 @@ namespace GMMS.Domain.Features.MemberShip.Models
     {
         public int PageNumber { get; set; }
         public int PageSize { get; set; }
-        public int? MemberId { get; set; }
+        public int MemberId { get; set; }
     }
     public class MemberShipListResponseModel
     {

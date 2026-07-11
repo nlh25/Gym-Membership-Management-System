@@ -10,11 +10,14 @@ namespace GMMS.App.Feature.Membership
         [Inject]
         private ApiService ApiService { get; set; } = null!;
 
+        [Inject]
+        private NavigationManager Navigation { get; set; } = null!;
+
         [SupplyParameterFromQuery(Name = "page")]
         public int Page { get; set; } = 1;
 
         [SupplyParameterFromQuery(Name = "memberId")]
-        public int? MemberId { get; set; }
+        public int MemberId { get; set; }
 
         private List<MemberShipModel>? memberships;
         private int pageNumber = 1;
@@ -23,12 +26,16 @@ namespace GMMS.App.Feature.Membership
         private int totalPages;
         private bool isLoading;
         private string? errorMessage;
-        private int? _previousMemberId;
 
         protected override async Task OnParametersSetAsync()
         {
             if (Page < 1) Page = 1;
-            if (memberships is null || Page != pageNumber || MemberId != _previousMemberId)
+            if (MemberId <= 0)
+            {
+                Navigation.NavigateTo("/member-list");
+                return;
+            }
+            if (memberships is null || Page != pageNumber)
             {
                 await LoadPage(Page);
             }
@@ -42,7 +49,7 @@ namespace GMMS.App.Feature.Membership
 
             try
             {
-                var result = await ApiService.GetMembershipListAsync<Result<MemberShipListResponseModel>>(pageNumber, pageSize, MemberId);
+                var result = await ApiService.GetMembershipListAsync<Result<MemberShipListResponseModel>>(MemberId, pageNumber, pageSize);
                 if (result?.IsSuccess == true && result.Data is not null)
                 {
                     memberships = result.Data.MemberShips;
@@ -61,7 +68,6 @@ namespace GMMS.App.Feature.Membership
             }
             finally
             {
-                _previousMemberId = MemberId;
                 isLoading = false;
             }
         }

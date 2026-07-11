@@ -1,5 +1,4 @@
 @page "/membership-edit/{id:int}"
-@using Microsoft.AspNetCore.Components.Forms
 
 <h3>Edit Membership</h3>
 
@@ -8,7 +7,7 @@
     <div class="alert alert-danger">@errorMessage</div>
 }
 
-@if (isLoading)
+@if (isLoadingData)
 {
     <div class="d-flex justify-content-center">
         <div class="spinner-border" role="status">
@@ -20,19 +19,39 @@ else
 {
     <div class="row">
         <div class="col-md-6">
-            <EditForm Model="request" OnSubmit="Update">
+            <EditForm Model="request" OnValidSubmit="Update" OnInvalidSubmit="OnInvalidSubmit">
                 <div class="mb-3">
-                    <label for="memberId" class="form-label">Member ID</label>
-                    <InputNumber id="memberId" class="form-control" @bind-Value="request.MembershipId" disabled />
+                    <label class="form-label">Member</label>
+                    <p class="form-control-plaintext">@detail?.MemberName</p>
                 </div>
                 <div class="mb-3">
-                    <label for="membershipPlanId" class="form-label">Membership Plan ID</label>
-                    <InputNumber id="membershipPlanId" class="form-control" @bind-Value="request.MembershipPlanId" />
+                    <label for="planId" class="form-label">Plan</label>
+                    <select id="planId" class="form-select" @bind-value="_planIdStr" @bind-value:event="onchange">
+                        @if (plans is not null)
+                        {
+                            @foreach (var plan in plans)
+                            {
+                                <option value="@plan.MemberShipPlanId">@plan.PlanName (@plan.DurationDays days)</option>
+                            }
+                        }
+                    </select>
                 </div>
-                <button type="submit" class="btn btn-primary">
+                <div class="mb-3">
+                    <label class="form-label">Start Date</label>
+                    <p class="form-control-plaintext fw-bold">@detail?.StartDate.ToString("yyyy-MM-dd")</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">New End Date (auto-calculated)</label>
+                    <p class="form-control-plaintext fw-bold">@(newEndDate?.ToString("yyyy-MM-dd") ?? "Select a plan")</p>
+                </div>
+                <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                    @if (isSaving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
                     Update
                 </button>
-                <a class="btn btn-secondary ms-2" href="membership-list">Cancel</a>
+                <a class="btn btn-secondary ms-2" href="membership-list?memberId=@MemberId">Cancel</a>
             </EditForm>
         </div>
     </div>

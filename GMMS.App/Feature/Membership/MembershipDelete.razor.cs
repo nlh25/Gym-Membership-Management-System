@@ -17,6 +17,9 @@ namespace GMMS.App.Feature.Membership
         [Inject]
         private NavigationManager Nav { get; set; } = null!;
 
+        [SupplyParameterFromQuery(Name = "memberId")]
+        public int MemberId { get; set; }
+
         private MemberShipModel? membership;
         private bool isLoading = true;
         private bool isDeleting;
@@ -40,6 +43,8 @@ namespace GMMS.App.Feature.Membership
                         EndDate = result.Data.EndDate,
                         Status = result.Data.Status
                     };
+                    if (MemberId <= 0)
+                        MemberId = result.Data.MemberId;
                 }
                 else
                 {
@@ -67,7 +72,7 @@ namespace GMMS.App.Feature.Membership
                 var result = await ApiService.DeleteMembershipAsync<Result<bool>>(Id);
                 if (result?.IsSuccess == true)
                 {
-                    Nav.NavigateTo("membership-list");
+                    Nav.NavigateTo($"/membership-list?memberId={MemberId}");
                 }
                 else
                 {

@@ -1,4 +1,5 @@
 @page "/membershipplan-list"
+@using GMMS.Domain.Features.MemberShipPlan.Models
 
 <h3>Membership Plan List</h3>
 
@@ -14,13 +15,6 @@ else if (errorMessage is not null)
 {
     <div class="alert alert-danger">@errorMessage</div>
 }
-else if (plans is null || plans.Count == 0)
-{
-    <div class="alert alert-info">
-        No membership plans found.
-        <a class="btn btn-primary btn-sm ms-3" href="membershipplan-create">Create one</a>
-    </div>
-}
 else
 {
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -30,66 +24,45 @@ else
         </a>
     </div>
 
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="table-dark">
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Plan Code</th>
-                    <th scope="col">Plan Name</th>
-                    <th scope="col">Price</th>
-                    <th scope="col">Created At</th>
-                    <th scope="col">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var p in plans)
-                {
+    @if (plans is not null && plans.Count > 0)
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
                     <tr>
-                        <td>@p.MemberShipPlanId</td>
-                        <td>@p.PlanCode</td>
-                        <td>@p.PlanName</td>
-                        <td>@p.Price.ToString("C")</td>
-                        <td>@p.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
-                        <td>
-                            <a class="btn btn-sm btn-outline-primary me-1" href="membershipplan-edit/@p.MemberShipPlanId" title="Edit">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            <a class="btn btn-sm btn-outline-danger" href="membershipplan-delete/@p.MemberShipPlanId" title="Delete">
-                                <i class="bi bi-trash"></i>
-                            </a>
-                        </td>
+                        <th>#</th>
+                        <th>Plan Code</th>
+                        <th>Plan Name</th>
+                        <th>Price</th>
+                        <th>Duration (Days)</th>
+                        <th>Actions</th>
                     </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-
-    <nav>
-        <ul class="pagination justify-content-center">
-            <li class="page-item @(pageNumber <= 1 ? "disabled" : "")">
-                @if (pageNumber > 1)
-                {
-                    <a class="page-link" href="/membershipplan-list?page=@(pageNumber - 1)">Previous</a>
-                }
-                else
-                {
-                    <span class="page-link">Previous</span>
-                }
-            </li>
-            <li class="page-item disabled">
-                <span class="page-link">Page @pageNumber of @totalPages</span>
-            </li>
-            <li class="page-item @(pageNumber >= totalPages ? "disabled" : "")">
-                @if (pageNumber < totalPages)
-                {
-                    <a class="page-link" href="/membershipplan-list?page=@(pageNumber + 1)">Next</a>
-                }
-                else
-                {
-                    <span class="page-link">Next</span>
-                }
-            </li>
-        </ul>
-    </nav>
+                </thead>
+                <tbody>
+                    @foreach (var p in plans)
+                    {
+                        <tr>
+                            <td>@p.MemberShipPlanId</td>
+                            <td>@p.PlanCode</td>
+                            <td>@p.PlanName</td>
+                            <td>@p.Price.ToString("C2")</td>
+                            <td>@p.DurationDays</td>
+                            <td>
+                                <a class="btn btn-sm btn-outline-primary me-1" href="membershipplan-edit/@p.MemberShipPlanId">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a class="btn btn-sm btn-outline-danger" href="membershipplan-delete/@p.MemberShipPlanId">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">No plans found.</div>
+    }
 }

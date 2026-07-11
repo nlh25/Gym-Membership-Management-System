@@ -1,5 +1,4 @@
 @page "/membershipplan-edit/{id:int}"
-@using Microsoft.AspNetCore.Components.Forms
 
 <h3>Edit Membership Plan</h3>
 
@@ -20,7 +19,7 @@ else
 {
     <div class="row">
         <div class="col-md-6">
-            <EditForm Model="request" OnSubmit="Update">
+            <EditForm Model="request" OnValidSubmit="Update">
                 <div class="mb-3">
                     <label for="planCode" class="form-label">Plan Code</label>
                     <InputText id="planCode" class="form-control" @bind-Value="request.PlanCode" />
@@ -30,20 +29,18 @@ else
                     <InputText id="planName" class="form-control" @bind-Value="request.PlanName" />
                 </div>
                 <div class="mb-3">
-                    <label for="price" class="form-label">Price</label>
-                    <InputNumber id="price" class="form-control" @bind-Value="request.Price" />
+                    <label for="description" class="form-label">Description</label>
+                    <InputTextArea id="description" class="form-control" @bind-Value="request.Description" />
                 </div>
                 <div class="mb-3">
                     <label for="durationDays" class="form-label">Duration (Days)</label>
                     <InputNumber id="durationDays" class="form-control" @bind-Value="request.DurationDays" />
                 </div>
                 <div class="mb-3">
-                    <label for="description" class="form-label">Description</label>
-                    <InputText id="description" class="form-control" @bind-Value="request.Description" />
+                    <label for="price" class="form-label">Price</label>
+                    <InputNumber id="price" class="form-control" @bind-Value="request.Price" />
                 </div>
-                <button type="submit" class="btn btn-primary">
-                    Update
-                </button>
+                <button type="submit" class="btn btn-primary">Update</button>
                 <a class="btn btn-secondary ms-2" href="membershipplan-list">Cancel</a>
             </EditForm>
         </div>

@@ -22,6 +22,7 @@ namespace GMMS.Domain.Features.MemberShipPlan.Models
         public string PlanCode { get; set; } = null!;
         public string PlanName { get; set; } = null!;
         public decimal Price { get; set; }
+        public int DurationDays { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }

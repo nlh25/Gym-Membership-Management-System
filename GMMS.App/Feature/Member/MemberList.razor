@@ -1,96 +1,62 @@
 ﻿@page "/member-list"
 
-<h3>Member List</h3>
+<MudContainer MaxWidth="MaxWidth.Large">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h4" Class="mb-4">Member List</MudText>
 
-@if (isLoading)
-{
-    <div class="d-flex justify-content-center">
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Loading...</span>
+        <div class="d-flex flex-wrap justify-space-between align-start mb-4" style="gap: 16px;">
+            <MudTextField @bind-Value="searchTerm" Placeholder="Search by code or name..." Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Clearable="true" Immediate="true" Style="width: 100%; max-width: 380px;" />
+
+            <div class="d-flex flex-wrap align-center" style="gap: 12px;">
+                <MudText Typo="Typo.body2" Class="d-flex align-center">
+                    Total: <strong class="ml-2 mud-primary-text">@totalCount</strong>
+                </MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" href="member-create" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small">
+                    Create Member
+                </MudButton>
+            </div>
         </div>
-    </div>
-}
-else if (errorMessage is not null)
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-else if (members is null || members.Count == 0)
-{
-    <div class="alert alert-info">
-        No members found.
-        <a class="btn btn-primary btn-sm ms-3" href="member-create">Create one</a>
-    </div>
-}
-else
-{
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <span>Total: <strong>@totalCount</strong> members</span>
-        <a class="btn btn-primary" href="member-create">
-            <i class="bi bi-plus-lg"></i> Create Member
-        </a>
-    </div>
 
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="table-dark">
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Member Code</th>
-                    <th scope="col">Name</th>
-                    <th scope="col">Created At</th>
-                    <th scope="col">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var m in members)
-                {
-                    <tr>
-                        <td>@m.MemberId</td>
-                        <td>@m.MemberCode</td>
-                        <td>@m.Name</td>
-                        <td>@m.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
-                        <td>
-                            <a class="btn btn-sm btn-outline-info me-1" href="/membership-list?memberId=@m.MemberId" title="View Memberships">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <a class="btn btn-sm btn-outline-primary me-1" href="member-edit/@m.MemberId" title="Edit">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            <a class="btn btn-sm btn-outline-danger" href="member-delete/@m.MemberId" title="Delete">
-                                <i class="bi bi-trash"></i>
-                            </a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+        @if (isLoading)
+        {
+            <div class="d-flex justify-center pa-12">
+                <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+            </div>
+        }
+        else if (errorMessage is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-4">@errorMessage</MudAlert>
+        }
+        else if (members is not null && members.Count > 0)
+        {
+            <MudTable Items="members" Dense="true" Hover="true" Striped="true" Breakpoint="Breakpoint.Sm" Elevation="1" Class="rounded">
+                <HeaderContent>
+                    <MudTh>#</MudTh>
+                    <MudTh>Member Code</MudTh>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Created At</MudTh>
+                    <MudTh Style="text-align: center;">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="#">@context.MemberId</MudTd>
+                    <MudTd DataLabel="Member Code">@context.MemberCode</MudTd>
+                    <MudTd DataLabel="Name">@context.Name</MudTd>
+                    <MudTd DataLabel="Created At">@context.CreatedAt.ToString("yyyy-MM-dd HH:mm")</MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: center;">
+                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Info" Href="@($"/membership-list?memberId={context.MemberId}")" Size="Size.Small" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Href="@($"/member-edit/{context.MemberId}")" Size="Size.Small" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Href="@($"/member-delete/{context.MemberId}")" Size="Size.Small" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
 
-    <nav>
-        <ul class="pagination justify-content-center">
-            <li class="page-item @(pageNumber <= 1 ? "disabled" : "")">
-                @if (pageNumber > 1)
-                {
-                    <a class="page-link" href="/member-list?page=@(pageNumber - 1)">Previous</a>
-                }
-                else
-                {
-                    <span class="page-link">Previous</span>
-                }
-            </li>
-            <li class="page-item disabled">
-                <span class="page-link">Page @pageNumber of @totalPages</span>
-            </li>
-            <li class="page-item @(pageNumber >= totalPages ? "disabled" : "")">
-                @if (pageNumber < totalPages)
-                {
-                    <a class="page-link" href="/member-list?page=@(pageNumber + 1)">Next</a>
-                }
-                else
-                {
-                    <span class="page-link">Next</span>
-                }
-            </li>
-        </ul>
-    </nav>
-}
+            <div class="d-flex flex-column align-center mt-6">
+                <MudPagination BoundaryCount="1" MiddleCount="1" Count="@totalPages" Selected="@_pageSelected" SelectedChanged="PageChanged" />
+            </div>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-4">No members found.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
