@@ -3,22 +3,23 @@ using GMMS.Domain;
 using GMMS.Domain.Features.MemberShip.Models;
 using GMMS.Domain.Features.MemberShipPlan.Models;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace GMMS.App.Feature.Membership
 {
     public partial class MembershipEdit : ComponentBase
     {
+        [CascadingParameter]
+        private IMudDialogInstance MudDialog { get; set; } = null!;
+
         [Parameter]
-        public int Id { get; set; }
+        public int MembershipId { get; set; }
+
+        [Parameter]
+        public int MemberId { get; set; }
 
         [Inject]
         private ApiService ApiService { get; set; } = null!;
-
-        [Inject]
-        private NavigationManager Navigation { get; set; } = null!;
-
-        [SupplyParameterFromQuery(Name = "memberId")]
-        public int MemberId { get; set; }
 
         private UpdateMembershipRequestModel request = new();
         private MembershipDetailModel? detail;
@@ -29,28 +30,26 @@ namespace GMMS.App.Feature.Membership
 
         private DateOnly? newEndDate;
 
-        private string _planIdStr
+        private string _planStr
         {
-            get => __planIdStr;
+            get => request.MembershipPlanId > 0 ? request.MembershipPlanId.ToString() : "";
             set
             {
-                __planIdStr = value;
+                request.MembershipPlanId = int.TryParse(value, out var id) ? id : 0;
                 RecalcEndDate();
             }
         }
-        private string __planIdStr = "";
 
         protected override async Task OnInitializedAsync()
         {
             try
             {
-                var result = await ApiService.GetMembershipDetailsAsync<Result<MembershipDetailModel>>(Id);
+                var result = await ApiService.GetMembershipDetailsAsync<Result<MembershipDetailModel>>(MembershipId);
                 if (result?.IsSuccess == true && result.Data is not null)
                 {
                     detail = result.Data;
                     request.MembershipId = result.Data.MembershipId;
                     request.MembershipPlanId = result.Data.MembershipPlanId;
-                    _planIdStr = result.Data.MembershipPlanId.ToString();
                     if (MemberId <= 0)
                         MemberId = result.Data.MemberId;
                 }
@@ -62,7 +61,7 @@ namespace GMMS.App.Feature.Membership
                 var planResult = await ApiService.GetMembershipPlanListAsync<Result<MemberShipPlanListResponseModel>>(1, 1000);
                 if (planResult?.IsSuccess == true && planResult.Data is not null)
                     plans = planResult.Data.MemberShipPlans;
-                
+
                 if (detail is not null && plans is not null)
                     RecalcEndDate();
             }
@@ -76,32 +75,26 @@ namespace GMMS.App.Feature.Membership
             }
         }
 
-        private void OnInvalidSubmit()
-        {
-            if (request.MembershipPlanId <= 0)
-                errorMessage = "Please select a membership plan.";
-        }
-
         private void RecalcEndDate()
         {
-            int.TryParse(_planIdStr, out var planId);
-            if (detail is null || plans is null || planId <= 0)
+            if (detail is null || plans is null || request.MembershipPlanId <= 0)
             {
                 newEndDate = null;
                 return;
             }
-            var plan = plans.FirstOrDefault(p => p.MemberShipPlanId == planId);
+            var plan = plans.FirstOrDefault(p => p.MemberShipPlanId == request.MembershipPlanId);
             newEndDate = plan is not null
                 ? detail.StartDate.AddDays(plan.DurationDays)
                 : null;
         }
 
+        private void Cancel()
+        {
+            MudDialog.Cancel();
+        }
+
         private async Task Update()
         {
-            RecalcEndDate();
-            int.TryParse(_planIdStr, out var planId);
-            request.MembershipPlanId = planId;
-
             if (request.MembershipPlanId <= 0)
             {
                 errorMessage = "Please select a membership plan.";
@@ -113,10 +106,10 @@ namespace GMMS.App.Feature.Membership
 
             try
             {
-                var result = await ApiService.UpdateMembershipAsync<UpdateMembershipRequestModel, Result<MembershipDetailModel>>(Id, request);
+                var result = await ApiService.UpdateMembershipAsync<UpdateMembershipRequestModel, Result<MembershipDetailModel>>(MembershipId, request);
                 if (result?.IsSuccess == true)
                 {
-                    Navigation.NavigateTo($"/membership-list?memberId={MemberId}");
+                    MudDialog.Close(DialogResult.Ok(true));
                 }
                 else
                 {

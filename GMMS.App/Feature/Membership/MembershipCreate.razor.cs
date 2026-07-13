@@ -5,19 +5,20 @@ using GMMS.Domain.Features.MemberShip.Models;
 using GMMS.Domain.Features.MemberShipPlan.Models;
 using GMMS.Domain.Features.PaymentMethod.Models;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace GMMS.App.Feature.Membership
 {
     public partial class MembershipCreate : ComponentBase
     {
+        [CascadingParameter]
+        private IMudDialogInstance MudDialog { get; set; } = null!;
+
+        [Parameter]
+        public int MemberId { get; set; }
+
         [Inject]
         private ApiService ApiService { get; set; } = null!;
-
-        [Inject]
-        private NavigationManager Navigation { get; set; } = null!;
-
-        [SupplyParameterFromQuery(Name = "memberId")]
-        public int MemberId { get; set; }
 
         private CreateMemberShipRequestModel request = new();
         private List<MemberModel>? members;
@@ -27,20 +28,30 @@ namespace GMMS.App.Feature.Membership
         private bool isSaving;
         private string? errorMessage;
 
-        private string _memberIdStr { get; set; } = "";
-        private string _planIdStr { get; set; } = "";
-        private string _paymentMethodIdStr { get; set; } = "";
+        private string? selectedMemberName;
+
+        private string _memberStr
+        {
+            get => request.MemberId > 0 ? request.MemberId.ToString() : "";
+            set => request.MemberId = int.TryParse(value, out var id) ? id : 0;
+        }
+
+        private string _planStr
+        {
+            get => request.MembershipPlanId > 0 ? request.MembershipPlanId.ToString() : "";
+            set => request.MembershipPlanId = int.TryParse(value, out var id) ? id : 0;
+        }
+
+        private string _paymentMethodStr
+        {
+            get => request.PaymentMethodId > 0 ? request.PaymentMethodId.ToString() : "";
+            set => request.PaymentMethodId = int.TryParse(value, out var id) ? id : 0;
+        }
 
         protected override async Task OnInitializedAsync()
         {
             try
             {
-                if (MemberId > 0)
-                {
-                    request.MemberId = MemberId;
-                    _memberIdStr = MemberId.ToString();
-                }
-
                 var memberResult = await ApiService.GetMemberListAsync<Result<MemberListResponseModel>>(1, 1000);
                 if (memberResult?.IsSuccess == true && memberResult.Data is not null)
                     members = memberResult.Data.Members;
@@ -52,6 +63,15 @@ namespace GMMS.App.Feature.Membership
                 var methodResult = await ApiService.GetPaymentMethodListAsync<Result<PaymentMethodListResponseModel>>(1, 1000);
                 if (methodResult?.IsSuccess == true && methodResult.Data is not null)
                     paymentMethods = methodResult.Data.PaymentMethods;
+
+                if (MemberId > 0)
+                {
+                    request.MemberId = MemberId;
+                    var member = members?.FirstOrDefault(m => m.MemberId == MemberId);
+                    selectedMemberName = member is not null
+                        ? $"{member.Name} ({member.MemberCode})"
+                        : $"Member #{MemberId}";
+                }
             }
             catch (Exception ex)
             {
@@ -63,16 +83,13 @@ namespace GMMS.App.Feature.Membership
             }
         }
 
+        private void Cancel()
+        {
+            MudDialog.Cancel();
+        }
+
         private async Task Save()
         {
-            int.TryParse(_memberIdStr, out var memberId);
-            int.TryParse(_planIdStr, out var planId);
-            int.TryParse(_paymentMethodIdStr, out var paymentMethodId);
-
-            request.MemberId = memberId;
-            request.MembershipPlanId = planId;
-            request.PaymentMethodId = paymentMethodId;
-
             if (request.MemberId <= 0)
             {
                 errorMessage = "Please select a member.";
@@ -98,7 +115,7 @@ namespace GMMS.App.Feature.Membership
 
                 if (result?.IsSuccess == true)
                 {
-                    Navigation.NavigateTo($"/membership-list?memberId={request.MemberId}");
+                    MudDialog.Close(DialogResult.Ok(true));
                 }
                 else
                 {

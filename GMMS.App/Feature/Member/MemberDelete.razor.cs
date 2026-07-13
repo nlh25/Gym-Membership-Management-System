@@ -2,20 +2,20 @@ using GMMS.App.Services;
 using GMMS.Domain;
 using GMMS.Domain.Features.Member.Models;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
+using MudBlazor;
 
 namespace GMMS.App.Feature.Member
 {
     public partial class MemberDelete : ComponentBase
     {
+        [CascadingParameter]
+        private IMudDialogInstance MudDialog { get; set; } = null!;
+
         [Parameter]
-        public int Id { get; set; }
+        public int MemberId { get; set; }
 
         [Inject]
         private ApiService ApiService { get; set; } = null!;
-
-        [Inject]
-        private NavigationManager Nav { get; set; } = null!;
 
         private MemberModel? member;
         private bool isLoading = true;
@@ -26,7 +26,7 @@ namespace GMMS.App.Feature.Member
         {
             try
             {
-                var result = await ApiService.GetMemberDetailsAsync<Result<MemberModel>>(Id);
+                var result = await ApiService.GetMemberDetailsAsync<Result<MemberModel>>(MemberId);
                 if (result?.IsSuccess == true && result.Data is not null)
                 {
                     member = result.Data;
@@ -46,6 +46,11 @@ namespace GMMS.App.Feature.Member
             }
         }
 
+        private void Cancel()
+        {
+            MudDialog.Cancel();
+        }
+
         private async Task ConfirmDelete()
         {
             isDeleting = true;
@@ -54,10 +59,10 @@ namespace GMMS.App.Feature.Member
 
             try
             {
-                var result = await ApiService.DeleteMemberAsync<Result<bool>>(Id);
+                var result = await ApiService.DeleteMemberAsync<Result<bool>>(MemberId);
                 if (result?.IsSuccess == true)
                 {
-                    Nav.NavigateTo("member-list");
+                    MudDialog.Close(DialogResult.Ok(true));
                 }
                 else
                 {

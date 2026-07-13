@@ -1,69 +1,61 @@
 @page "/membership-list"
 
-<h3>Membership List</h3>
+<MudContainer MaxWidth="MaxWidth.Large">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h4" Class="mb-4">Membership List</MudText>
 
-@if (isLoading)
-{
-    <div class="d-flex justify-content-center">
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Loading...</span>
+        <div class="d-flex flex-wrap justify-space-between align-start mb-4" style="gap: 16px;">
+            <MudText Typo="Typo.body2" Class="d-flex align-center">
+                Total: <strong class="ml-2 mud-primary-text">@totalCount</strong> memberships
+            </MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenCreateDialog" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small">
+                Create Membership
+            </MudButton>
         </div>
-    </div>
-}
-else if (errorMessage is not null)
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-else
-{
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <span>Total: <strong>@totalCount</strong> memberships</span>
-        <a class="btn btn-primary" href="membership-create?memberId=@MemberId">
-            <i class="bi bi-plus-lg"></i> Create Membership
-        </a>
-    </div>
 
-    @if (memberships is not null && memberships.Count > 0)
-    {
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>#</th>
-                        <th>Member Name</th>
-                        <th>Plan Name</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var m in memberships)
-                    {
-                        <tr>
-                            <td>@m.MembershipId</td>
-                            <td>@m.MemberName</td>
-                            <td>@m.PlanName</td>
-                            <td>@m.StartDate.ToString("yyyy-MM-dd")</td>
-                            <td>@m.EndDate.ToString("yyyy-MM-dd")</td>
-                            <td>@m.Status</td>
-                            <td>
-                                <a class="btn btn-sm btn-outline-primary me-1" href="membership-edit/@m.MembershipId?memberId=@MemberId">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <a class="btn btn-sm btn-outline-danger" href="membership-delete/@m.MembershipId?memberId=@MemberId">
-                                    <i class="bi bi-trash"></i>
-                                </a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
-    else
-    {
-        <div class="alert alert-info">No memberships found for this member.</div>
-    }
-}
+        @if (isLoading)
+        {
+            <div class="d-flex justify-center pa-12">
+                <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+            </div>
+        }
+        else if (errorMessage is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-4">@errorMessage</MudAlert>
+        }
+        else if (memberships is not null && memberships.Count > 0)
+        {
+            <MudTable Items="memberships" Dense="true" Hover="true" Striped="true" Breakpoint="Breakpoint.Sm" Elevation="1" Class="rounded">
+                <HeaderContent>
+                    <MudTh>#</MudTh>
+                    <MudTh>Member Name</MudTh>
+                    <MudTh>Plan Name</MudTh>
+                    <MudTh>Start Date</MudTh>
+                    <MudTh>End Date</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh Style="text-align: center;">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="#">@context.MembershipId</MudTd>
+                    <MudTd DataLabel="Member Name">@context.MemberName</MudTd>
+                    <MudTd DataLabel="Plan Name">@context.PlanName</MudTd>
+                    <MudTd DataLabel="Start Date">@context.StartDate.ToString("yyyy-MM-dd")</MudTd>
+                    <MudTd DataLabel="End Date">@context.EndDate.ToString("yyyy-MM-dd")</MudTd>
+                    <MudTd DataLabel="Status">@context.Status</MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: center;">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" OnClick="@(() => OpenEditDialog(context.MembershipId))" Size="Size.Small" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => OpenDeleteDialog(context.MembershipId))" Size="Size.Small" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+            <div class="d-flex flex-column align-center mt-6">
+                <MudPagination BoundaryCount="1" MiddleCount="1" Count="@totalPages" Selected="@_pageSelected" SelectedChanged="PageChanged" />
+            </div>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-4">No memberships found for this member.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>

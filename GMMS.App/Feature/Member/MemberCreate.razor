@@ -1,33 +1,44 @@
-@page "/member-create"
-@using Microsoft.AspNetCore.Components.Forms
+@using MudBlazor
 
-<h3>Create Member</h3>
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Class="mr-3" /> Create Member
+        </MudText>
+    </TitleContent>
 
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
+    <DialogContent>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+        }
 
+        <MudTextField @bind-Value="request.MemberCode"
+                      Label="Member Code"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      RequiredError="Member Code is required."
+                      Class="mb-3" />
 
-<div class="row">
-    <div class="col-md-6">
-        <EditForm Model="request" OnValidSubmit="Save">
-            <div class="mb-3">
-                <label for="memberCode" class="form-label">Member Code</label>
-                <InputText id="memberCode" class="form-control" @bind-Value="request.MemberCode" />
-            </div>
-            <div class="mb-3">
-                <label for="name" class="form-label">Name</label>
-                <InputText id="name" class="form-control" @bind-Value="request.Name" />
-            </div>
-            <button type="submit" class="btn btn-primary" disabled="@isLoading">
-                @if (isLoading)
-                {
-                    <span class="spinner-border spinner-border-sm me-1"></span>
-                }
-                Save
-            </button>
-            <a class="btn btn-secondary ms-2" href="member-list">Cancel</a>
-        </EditForm>
-    </div>
-</div>
+        <MudTextField @bind-Value="request.Name"
+                      Label="Name"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      RequiredError="Name is required."
+                      Class="mb-3" />
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="Save"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@isLoading">
+            @if (isLoading)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>

@@ -2,23 +2,23 @@ using GMMS.App.Services;
 using GMMS.Domain;
 using GMMS.Domain.Features.MemberShip.Models;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
+using MudBlazor;
 
 namespace GMMS.App.Feature.Membership
 {
     public partial class MembershipDelete : ComponentBase
     {
+        [CascadingParameter]
+        private IMudDialogInstance MudDialog { get; set; } = null!;
+
         [Parameter]
-        public int Id { get; set; }
+        public int MembershipId { get; set; }
+
+        [Parameter]
+        public int MemberId { get; set; }
 
         [Inject]
         private ApiService ApiService { get; set; } = null!;
-
-        [Inject]
-        private NavigationManager Nav { get; set; } = null!;
-
-        [SupplyParameterFromQuery(Name = "memberId")]
-        public int MemberId { get; set; }
 
         private MemberShipModel? membership;
         private bool isLoading = true;
@@ -29,7 +29,7 @@ namespace GMMS.App.Feature.Membership
         {
             try
             {
-                var result = await ApiService.GetMembershipDetailsAsync<Result<MembershipDetailModel>>(Id);
+                var result = await ApiService.GetMembershipDetailsAsync<Result<MembershipDetailModel>>(MembershipId);
                 if (result?.IsSuccess == true && result.Data is not null)
                 {
                     membership = new MemberShipModel
@@ -61,6 +61,11 @@ namespace GMMS.App.Feature.Membership
             }
         }
 
+        private void Cancel()
+        {
+            MudDialog.Cancel();
+        }
+
         private async Task ConfirmDelete()
         {
             isDeleting = true;
@@ -69,10 +74,10 @@ namespace GMMS.App.Feature.Membership
 
             try
             {
-                var result = await ApiService.DeleteMembershipAsync<Result<bool>>(Id);
+                var result = await ApiService.DeleteMembershipAsync<Result<bool>>(MembershipId);
                 if (result?.IsSuccess == true)
                 {
-                    Nav.NavigateTo($"/membership-list?memberId={MemberId}");
+                    MudDialog.Close(DialogResult.Ok(true));
                 }
                 else
                 {

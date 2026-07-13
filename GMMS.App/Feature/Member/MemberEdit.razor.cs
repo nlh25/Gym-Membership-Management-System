@@ -2,31 +2,31 @@ using GMMS.App.Services;
 using GMMS.Domain;
 using GMMS.Domain.Features.Member.Models;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace GMMS.App.Feature.Member
 {
     public partial class MemberEdit : ComponentBase
     {
+        [CascadingParameter]
+        private IMudDialogInstance MudDialog { get; set; } = null!;
+
         [Parameter]
-        public int Id { get; set; }
+        public int MemberId { get; set; }
 
         [Inject]
         private ApiService ApiService { get; set; } = null!;
 
-        [Inject]
-        private NavigationManager Navigation { get; set; } = null!;
-
         private UpdateMemberRequestModel request = new();
-        private bool isLoading;
+        private bool isLoading = true;
+        private bool isSaving;
         private string? errorMessage;
 
         protected override async Task OnInitializedAsync()
         {
-            isLoading = true;
-
             try
             {
-                var result = await ApiService.GetMemberDetailsAsync<Result<MemberModel>>(Id);
+                var result = await ApiService.GetMemberDetailsAsync<Result<MemberModel>>(MemberId);
                 if (result?.IsSuccess == true && result.Data is not null)
                 {
                     request.MemberId = result.Data.MemberId;
@@ -48,16 +48,22 @@ namespace GMMS.App.Feature.Member
             }
         }
 
+        private void Cancel()
+        {
+            MudDialog.Cancel();
+        }
+
         private async Task Update()
         {
+            isSaving = true;
             errorMessage = null;
 
             try
             {
-                var result = await ApiService.UpdateMemberAsync<UpdateMemberRequestModel, Result<MemberModel>>(Id, request);
+                var result = await ApiService.UpdateMemberAsync<UpdateMemberRequestModel, Result<MemberModel>>(MemberId, request);
                 if (result?.IsSuccess == true)
                 {
-                    Navigation.NavigateTo("/member-list");
+                    MudDialog.Close(DialogResult.Ok(true));
                 }
                 else
                 {
@@ -67,6 +73,10 @@ namespace GMMS.App.Feature.Member
             catch (Exception ex)
             {
                 errorMessage = ex.Message;
+            }
+            finally
+            {
+                isSaving = false;
             }
         }
     }

@@ -2,6 +2,7 @@ using GMMS.App.Services;
 using GMMS.Domain;
 using GMMS.Domain.Features.Member.Models;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace GMMS.App.Feature.Member
 {
@@ -9,6 +10,9 @@ namespace GMMS.App.Feature.Member
     {
         [Inject]
         private ApiService ApiService { get; set; } = null!;
+
+        [Inject]
+        private IDialogService DialogService { get; set; } = null!;
 
         [SupplyParameterFromQuery(Name = "page")]
         public int Page { get; set; } = 1;
@@ -104,6 +108,41 @@ namespace GMMS.App.Feature.Member
             finally
             {
                 isLoading = false;
+            }
+        }
+
+        private async Task OpenCreateDialog()
+        {
+            var dialog = await DialogService.ShowAsync<MemberCreate>("Create Member");
+            var result = await dialog.Result;
+
+            if (result is not null && !result.Canceled)
+            {
+                await LoadPage(1);
+            }
+        }
+
+        private async Task OpenEditDialog(int memberId)
+        {
+            var parameters = new DialogParameters<MemberEdit> { { x => x.MemberId, memberId } };
+            var dialog = await DialogService.ShowAsync<MemberEdit>("Edit Member", parameters);
+            var result = await dialog.Result;
+
+            if (result is not null && !result.Canceled)
+            {
+                await LoadPage(pageNumber);
+            }
+        }
+
+        private async Task OpenDeleteDialog(int memberId)
+        {
+            var parameters = new DialogParameters<MemberDelete> { { x => x.MemberId, memberId } };
+            var dialog = await DialogService.ShowAsync<MemberDelete>("Delete Member", parameters);
+            var result = await dialog.Result;
+
+            if (result is not null && !result.Canceled)
+            {
+                await LoadPage(pageNumber);
             }
         }
 

@@ -2,6 +2,7 @@ using GMMS.App.Services;
 using GMMS.Domain;
 using GMMS.Domain.Features.MemberShip.Models;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace GMMS.App.Feature.Membership
 {
@@ -12,6 +13,9 @@ namespace GMMS.App.Feature.Membership
 
         [Inject]
         private NavigationManager Navigation { get; set; } = null!;
+
+        [Inject]
+        private IDialogService DialogService { get; set; } = null!;
 
         [SupplyParameterFromQuery(Name = "page")]
         public int Page { get; set; } = 1;
@@ -27,9 +31,12 @@ namespace GMMS.App.Feature.Membership
         private bool isLoading;
         private string? errorMessage;
 
+        private int _pageSelected = 1;
+
         protected override async Task OnParametersSetAsync()
         {
             if (Page < 1) Page = 1;
+            _pageSelected = Page;
             if (MemberId <= 0)
             {
                 Navigation.NavigateTo("/member-list");
@@ -39,6 +46,12 @@ namespace GMMS.App.Feature.Membership
             {
                 await LoadPage(Page);
             }
+        }
+
+        private async Task PageChanged(int page)
+        {
+            _pageSelected = page;
+            await LoadPage(page);
         }
 
         private async Task LoadPage(int page)
@@ -69,6 +82,50 @@ namespace GMMS.App.Feature.Membership
             finally
             {
                 isLoading = false;
+            }
+        }
+
+        private async Task OpenCreateDialog()
+        {
+            var parameters = new DialogParameters<MembershipCreate> { { x => x.MemberId, MemberId } };
+            var dialog = await DialogService.ShowAsync<MembershipCreate>("Create Membership", parameters);
+            var result = await dialog.Result;
+
+            if (result is not null && !result.Canceled)
+            {
+                await LoadPage(1);
+            }
+        }
+
+        private async Task OpenEditDialog(int membershipId)
+        {
+            var parameters = new DialogParameters<MembershipEdit>
+            {
+                { x => x.MembershipId, membershipId },
+                { x => x.MemberId, MemberId }
+            };
+            var dialog = await DialogService.ShowAsync<MembershipEdit>("Edit Membership", parameters);
+            var result = await dialog.Result;
+
+            if (result is not null && !result.Canceled)
+            {
+                await LoadPage(pageNumber);
+            }
+        }
+
+        private async Task OpenDeleteDialog(int membershipId)
+        {
+            var parameters = new DialogParameters<MembershipDelete>
+            {
+                { x => x.MembershipId, membershipId },
+                { x => x.MemberId, MemberId }
+            };
+            var dialog = await DialogService.ShowAsync<MembershipDelete>("Delete Membership", parameters);
+            var result = await dialog.Result;
+
+            if (result is not null && !result.Canceled)
+            {
+                await LoadPage(pageNumber);
             }
         }
     }

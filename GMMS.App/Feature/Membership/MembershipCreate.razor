@@ -1,77 +1,95 @@
-@page "/membership-create"
+@using MudBlazor
 
-<h3>Create Membership</h3>
+<MudDialog MaxWidth="MaxWidth.Small" FullWidth="true">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.AddCard" Class="mr-3" Color="Color.Primary" /> Create Membership
+        </MudText>
+    </TitleContent>
 
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
+    <DialogContent>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+        }
 
-@if (isLoadingData)
-{
-    <div class="d-flex justify-content-center">
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-    </div>
-}
-else
-{
-    <div class="row">
-        <div class="col-md-6">
-            <EditForm Model="request" OnValidSubmit="Save">
-                <div class="mb-3">
-                    <label for="memberId" class="form-label">Member</label>
-                    <select id="memberId" class="form-select" @bind-value="_memberIdStr" @bind-value:event="onchange">
+        @if (isLoadingData)
+        {
+            <div class="d-flex justify-center pa-6">
+                <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+            </div>
+        }
+        else
+        {
+            @if (MemberId > 0 && selectedMemberName is not null)
+            {
+                <MudTextField Value="@selectedMemberName" Label="Member" Variant="Variant.Outlined"
+                              ReadOnly="true" Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Person" Class="mb-4" />
+            }
+            else
+            {
+                <div class="mb-4">
+                    <MudText Typo="Typo.body2" Class="mb-1"><strong>Member</strong> <span class="text-danger">*</span></MudText>
+                    <select class="form-select" @bind-value="_memberStr" @bind-value:event="onchange">
                         <option value="">-- Select Member --</option>
                         @if (members is not null)
                         {
-                            @foreach (var member in members)
+                            @foreach (var m in members)
                             {
-                                <option value="@member.MemberId">@member.Name (@member.MemberCode)</option>
+                                <option value="@m.MemberId">@m.Name (@m.MemberCode)</option>
                             }
                         }
                     </select>
                 </div>
-                <div class="mb-3">
-                    <label for="planId" class="form-label">Plan</label>
-                    <select id="planId" class="form-select" @bind-value="_planIdStr" @bind-value:event="onchange">
-                        <option value="">-- Select Plan --</option>
-                        @if (plans is not null)
-                        {
-                            @foreach (var plan in plans)
-                            {
-                                <option value="@plan.MemberShipPlanId">@plan.PlanName</option>
-                            }
-                        }
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="paymentMethodId" class="form-label">Payment Method</label>
-                    <select id="paymentMethodId" class="form-select" @bind-value="_paymentMethodIdStr" @bind-value:event="onchange">
-                        <option value="">-- Select Payment Method --</option>
-                        @if (paymentMethods is not null)
-                        {
-                            @foreach (var method in paymentMethods)
-                            {
-                                <option value="@method.PaymentMethodId">@method.Name</option>
-                            }
-                        }
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="amount" class="form-label">Amount</label>
-                    <InputNumber id="amount" class="form-control" @bind-Value="request.Amount" />
-                </div>
-                <button type="submit" class="btn btn-primary" disabled="@isSaving">
-                    @if (isSaving)
+            }
+
+            <div class="mb-4">
+                <MudText Typo="Typo.body2" Class="mb-1"><strong>Plan</strong> <span class="text-danger">*</span></MudText>
+                <select class="form-select" @bind-value="_planStr" @bind-value:event="onchange">
+                    <option value="">-- Select Plan --</option>
+                    @if (plans is not null)
                     {
-                        <span class="spinner-border spinner-border-sm me-1"></span>
+                        @foreach (var p in plans)
+                        {
+                            <option value="@p.MemberShipPlanId">@p.PlanName (@p.DurationDays days - @p.Price.ToString("C2"))</option>
+                        }
                     }
-                    Save
-                </button>
-                <a class="btn btn-secondary ms-2" href="member-list">Cancel</a>
-            </EditForm>
-        </div>
-    </div>
-}
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <MudText Typo="Typo.body2" Class="mb-1"><strong>Payment Method</strong> <span class="text-danger">*</span></MudText>
+                <select class="form-select" @bind-value="_paymentMethodStr" @bind-value:event="onchange">
+                    <option value="">-- Select Payment Method --</option>
+                    @if (paymentMethods is not null)
+                    {
+                        @foreach (var pm in paymentMethods)
+                        {
+                            <option value="@pm.PaymentMethodId">@pm.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <MudNumericField @bind-Value="request.Amount" Label="Amount" Variant="Variant.Outlined"
+                             Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney"
+                             Min="0" Class="mb-2" />
+        }
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text" Class="mr-2">Cancel</MudButton>
+        <MudButton OnClick="Save"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Save"
+                   Disabled="@isSaving">
+            @if (isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
