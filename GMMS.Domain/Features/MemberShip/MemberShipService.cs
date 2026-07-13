@@ -69,6 +69,73 @@ namespace GMMS.Domain.Features.MemberShip
                 };
             }
         }
+
+        public Result<MemberShipListResponseModel> GetAllList(AllMemberShipListRequestModel request)
+        {
+            try
+            {
+                if (request.PageNumber <= 0)
+                    request.PageNumber = 1;
+
+                if (request.PageSize <= 0)
+                    request.PageSize = 10;
+
+                var query = _db.TblMemberships
+                    .AsNoTracking()
+                    .Where(x => !x.IsDeleted);
+
+                if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+                {
+                    var search = request.SearchTerm.Trim().ToLower();
+                    query = query.Where(x => x.Member.MemberCode.ToLower().Contains(search) 
+                        || x.Member.Name.ToLower().Contains(search)
+                        || x.MembershipPlan.PlanName.ToLower().Contains(search));
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.Status))
+                {
+                    query = query.Where(x => x.Status == request.Status);
+                }
+
+                var totalCount = query.Count();
+
+                var memberships = query
+                    .OrderByDescending(x => x.MembershipId)
+                    .Skip((request.PageNumber - 1) * request.PageSize)
+                    .Take(request.PageSize)
+                    .Select(x => new MemberShipModel
+                    {
+                        MembershipId = x.MembershipId,
+                        MemberCode = x.Member.MemberCode,
+                        MemberName = x.Member.Name,
+                        PlanCode = x.MembershipPlan.PlanCode,
+                        PlanName = x.MembershipPlan.PlanName,
+                        StartDate = x.StartDate,
+                        EndDate = x.EndDate,
+                        Status = x.Status
+                    })
+                    .ToList();
+
+                return new Result<MemberShipListResponseModel>
+                {
+                    IsSuccess = true,
+                    Message = "All memberships retrieved successfully.",
+                    Data = new MemberShipListResponseModel
+                    {
+                        TotalCount = totalCount,
+                        MemberShips = memberships
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                return new Result<MemberShipListResponseModel>
+                {
+                    IsSuccess = false,
+                    Message = ex.Message
+                };
+            }
+        }
         public Result<MembershipDetailModel> GetById(int membershipId)
         {
             try

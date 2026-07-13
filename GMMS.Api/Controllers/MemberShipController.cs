@@ -23,6 +23,14 @@ namespace GMMS.Api.Controllers
             var result = _memberShipService.GetList(request);
             return Execute(result);
         }
+
+        [HttpGet("all")]
+        public IActionResult GetAllMemberships([FromQuery] AllMemberShipListRequestModel request)
+        {
+            var result = _memberShipService.GetAllList(request);
+            return Execute(result);
+        }
+
         [HttpGet("{id}")]
         public IActionResult GetMemberShipById([FromRoute] int id)
         {

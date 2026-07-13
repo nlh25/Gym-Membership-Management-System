@@ -12,6 +12,15 @@ namespace GMMS.Domain.Features.MemberShip.Models
         public int PageSize { get; set; }
         public int MemberId { get; set; }
     }
+
+    public class AllMemberShipListRequestModel
+    {
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public string? SearchTerm { get; set; }
+        public string? Status { get; set; }
+    }
+
     public class MemberShipListResponseModel
     {
         public int TotalCount { get; set; }

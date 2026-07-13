@@ -45,6 +45,7 @@ namespace GMMS.Domain.Features.MemberShipPlan
                         PlanName = x.PlanName,
                         Price = x.Price,
                         DurationDays = x.DurationDays,
+                        IsActive = x.IsActive,
                         CreatedAt = x.CreatedAt,
                         UpdatedAt = x.UpdatedAt,
                     })

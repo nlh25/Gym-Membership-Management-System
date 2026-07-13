@@ -1,65 +1,65 @@
 @page "/paymentmethod-list"
 
-<h3>Payment Method List</h3>
+<MudContainer MaxWidth="MaxWidth.Large">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h4" Class="mb-4">Payment Methods</MudText>
 
-@if (isLoading)
-{
-    <div class="d-flex justify-content-center">
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-    </div>
-}
-else if (errorMessage is not null)
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-else
-{
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <span>Total: <strong>@totalCount</strong> payment methods</span>
-        <a class="btn btn-primary" href="paymentmethod-create">
-            <i class="bi bi-plus-lg"></i> Create Payment Method
-        </a>
-    </div>
+        <div class="d-flex flex-wrap justify-space-between align-start mb-4" style="gap: 16px;">
+            <MudTextField @bind-Value="searchTerm" Placeholder="Search by code or name..." Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Clearable="true" Immediate="true" Style="width: 100%; max-width: 380px;" />
 
-    @if (methods is not null && methods.Count > 0)
-    {
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>#</th>
-                        <th>Payment Method Code</th>
-                        <th>Name</th>
-                        <th>Active</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var pm in methods)
-                    {
-                        <tr>
-                            <td>@pm.PaymentMethodId</td>
-                            <td>@pm.PaymentMethodCode</td>
-                            <td>@pm.Name</td>
-                            <td>@pm.IsActive</td>
-                            <td>
-                                <a class="btn btn-sm btn-outline-primary me-1" href="paymentmethod-edit/@pm.PaymentMethodId">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <a class="btn btn-sm btn-outline-danger" href="paymentmethod-delete/@pm.PaymentMethodId">
-                                    <i class="bi bi-trash"></i>
-                                </a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+            <div class="d-flex flex-wrap align-center" style="gap: 12px;">
+                <MudText Typo="Typo.body2" Class="d-flex align-center">
+                    Total: <strong class="ml-2 mud-primary-text">@totalCount</strong>
+                </MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenCreateDialog" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small">
+                    Create Payment Method
+                </MudButton>
+            </div>
         </div>
-    }
-    else
-    {
-        <div class="alert alert-info">No payment methods found.</div>
-    }
-}
+
+        @if (isLoading)
+        {
+            <div class="d-flex justify-center pa-12">
+                <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+            </div>
+        }
+        else if (errorMessage is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-4">@errorMessage</MudAlert>
+        }
+        else if (methods is not null && methods.Count > 0)
+        {
+            <MudTable Items="methods" Dense="true" Hover="true" Striped="true" Breakpoint="Breakpoint.Sm" Elevation="1" Class="rounded">
+                <HeaderContent>
+                    <MudTh>#</MudTh>
+                    <MudTh>Payment Method Code</MudTh>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Active</MudTh>
+                    <MudTh Style="text-align: center;">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="#">@context.PaymentMethodId</MudTd>
+                    <MudTd DataLabel="Payment Method Code">@context.PaymentMethodCode</MudTd>
+                    <MudTd DataLabel="Name">@context.Name</MudTd>
+                    <MudTd DataLabel="Active">
+                        <MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Default)" Size="Size.Small">
+                            @(context.IsActive ? "Yes" : "No")
+                        </MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: center;">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" OnClick="@(() => OpenEditDialog(context.PaymentMethodId))" Size="Size.Small" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => OpenDeleteDialog(context.PaymentMethodId))" Size="Size.Small" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+            <div class="d-flex flex-column align-center mt-6">
+                <MudPagination BoundaryCount="1" MiddleCount="1" Count="@totalPages" Selected="@_pageSelected" SelectedChanged="PageChanged" />
+            </div>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-4">No payment methods found.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>

@@ -49,6 +49,16 @@
             return await _http.GetAsync<TResponse>(endpoint);
         }
 
+        public async Task<TResponse?> GetAllMembershipsAsync<TResponse>(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, string? status = null)
+        {
+            var endpoint = $"{ApiEndpoints.MembershipListAll}?pageNumber={pageNumber}&pageSize={pageSize}";
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+                endpoint += $"&searchTerm={Uri.EscapeDataString(searchTerm)}";
+            if (!string.IsNullOrWhiteSpace(status))
+                endpoint += $"&status={Uri.EscapeDataString(status)}";
+            return await _http.GetAsync<TResponse>(endpoint);
+        }
+
         public async Task<TResponse?> GetMembershipDetailsAsync<TResponse>(int id)
         {
             var endpoint = ApiEndpoints.MembershipDetails.Replace("{id}", id.ToString());

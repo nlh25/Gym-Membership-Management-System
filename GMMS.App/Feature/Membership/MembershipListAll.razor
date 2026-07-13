@@ -1,0 +1,78 @@
+@page "/membership-list-all"
+
+<MudContainer MaxWidth="MaxWidth.Large">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h4" Class="mb-4">All Memberships</MudText>
+
+        <div class="d-flex flex-wrap justify-space-between align-start mb-4" style="gap: 16px;">
+            <MudTextField @bind-Value="searchTerm" Placeholder="Search by member, plan..." Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Clearable="true" Immediate="true" Style="width: 100%; max-width: 380px;" />
+
+            <div class="d-flex flex-wrap align-center" style="gap: 12px;">
+                <MudSelect T="string" Label="Status" @bind-Value="selectedStatus" AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined" Style="min-width: 180px;">
+                    <MudSelectItem Value="@("")">All Statuses</MudSelectItem>
+                    <MudSelectItem Value="@("Pending")">Pending</MudSelectItem>
+                    <MudSelectItem Value="@("Active")">Active</MudSelectItem>
+                    <MudSelectItem Value="@("Expired")">Expired</MudSelectItem>
+                </MudSelect>
+
+                <MudText Typo="Typo.body2" Class="d-flex align-center">
+                    Total: <strong class="ml-2 mud-primary-text">@totalCount</strong>
+                </MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenCreateDialog" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small">
+                    Create Membership
+                </MudButton>
+            </div>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="d-flex justify-center pa-12">
+                <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+            </div>
+        }
+        else if (errorMessage is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-4">@errorMessage</MudAlert>
+        }
+        else if (memberships is not null && memberships.Count > 0)
+        {
+            <MudTable Items="memberships" Dense="true" Hover="true" Striped="true" Breakpoint="Breakpoint.Sm" Elevation="1" Class="rounded">
+                <HeaderContent>
+                    <MudTh>#</MudTh>
+                    <MudTh>Member Code</MudTh>
+                    <MudTh>Member Name</MudTh>
+                    <MudTh>Plan Code</MudTh>
+                    <MudTh>Plan Name</MudTh>
+                    <MudTh>Start Date</MudTh>
+                    <MudTh>End Date</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh Style="text-align: center;">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="#">@context.MembershipId</MudTd>
+                    <MudTd DataLabel="Member Code">@context.MemberCode</MudTd>
+                    <MudTd DataLabel="Member Name">@context.MemberName</MudTd>
+                    <MudTd DataLabel="Plan Code">@context.PlanCode</MudTd>
+                    <MudTd DataLabel="Plan Name">@context.PlanName</MudTd>
+                    <MudTd DataLabel="Start Date">@context.StartDate.ToString("yyyy-MM-dd")</MudTd>
+                    <MudTd DataLabel="End Date">@context.EndDate.ToString("yyyy-MM-dd")</MudTd>
+                    <MudTd DataLabel="Status">
+                        <MudChip T="string" Color="@GetStatusColor(context.Status)" Size="Size.Small">@context.Status</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align: center;">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" OnClick="@(() => OpenEditDialog(context.MembershipId))" Size="Size.Small" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => OpenDeleteDialog(context.MembershipId))" Size="Size.Small" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+            <div class="d-flex flex-column align-center mt-6">
+                <MudPagination BoundaryCount="1" MiddleCount="1" Count="@totalPages" Selected="@_pageSelected" SelectedChanged="PageChanged" />
+            </div>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-4">No memberships found.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>

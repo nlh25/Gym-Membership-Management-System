@@ -2,24 +2,30 @@ using GMMS.App.Services;
 using GMMS.Domain;
 using GMMS.Domain.Features.PaymentMethod.Models;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace GMMS.App.Feature.PaymentMethod
 {
     public partial class PaymentMethodCreate : ComponentBase
     {
+        [CascadingParameter]
+        private IMudDialogInstance MudDialog { get; set; } = null!;
+
         [Inject]
         private ApiService ApiService { get; set; } = null!;
 
-        [Inject]
-        private NavigationManager Navigation { get; set; } = null!;
-
         private PaymentMethodCreateRequestModel request = new();
-        private bool isLoading;
+        private bool isSaving;
         private string? errorMessage;
+
+        private void Cancel()
+        {
+            MudDialog.Cancel();
+        }
 
         private async Task Save()
         {
-            isLoading = true;
+            isSaving = true;
             errorMessage = null;
 
             try
@@ -28,7 +34,7 @@ namespace GMMS.App.Feature.PaymentMethod
 
                 if (result?.IsSuccess == true)
                 {
-                    Navigation.NavigateTo("/paymentmethod-list");
+                    MudDialog.Close(DialogResult.Ok(true));
                 }
                 else
                 {
@@ -41,7 +47,7 @@ namespace GMMS.App.Feature.PaymentMethod
             }
             finally
             {
-                isLoading = false;
+                isSaving = false;
             }
         }
     }

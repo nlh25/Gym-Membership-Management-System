@@ -21,6 +21,8 @@
         }
         else if (detail is not null)
         {
+            <MudText Typo="Typo.caption" Class="mb-2">Debug: Plans=@plans.Count</MudText>
+            
             <MudTextField Value="@detail.MemberName" Label="Member" Variant="Variant.Outlined"
                           ReadOnly="true" Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Person" Class="mb-4" />

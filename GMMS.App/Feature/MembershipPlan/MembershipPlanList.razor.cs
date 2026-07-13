@@ -2,13 +2,17 @@ using GMMS.App.Services;
 using GMMS.Domain;
 using GMMS.Domain.Features.MemberShipPlan.Models;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace GMMS.App.Feature.MembershipPlan
 {
-    public partial class MembershipPlanList : ComponentBase
+    public partial class MembershipPlanList : ComponentBase, IDisposable
     {
         [Inject]
         private ApiService ApiService { get; set; } = null!;
+
+        [Inject]
+        private IDialogService DialogService { get; set; } = null!;
 
         [SupplyParameterFromQuery(Name = "page")]
         public int Page { get; set; } = 1;
@@ -21,20 +25,66 @@ namespace GMMS.App.Feature.MembershipPlan
         private bool isLoading;
         private string? errorMessage;
 
+        private int _pageSelected = 1;
+        private CancellationTokenSource? _searchCts;
+
+        private string? _searchTerm;
+        private string? searchTerm
+        {
+            get => _searchTerm;
+            set
+            {
+                if (_searchTerm == value) return;
+                _searchTerm = value;
+                DebounceSearch();
+            }
+        }
+
+        private async void DebounceSearch()
+        {
+            _searchCts?.Cancel();
+            _searchCts?.Dispose();
+            _searchCts = new CancellationTokenSource();
+            var token = _searchCts.Token;
+
+            try
+            {
+                await Task.Delay(300, token);
+                if (!token.IsCancellationRequested)
+                {
+                    await LoadPage(1, false);
+                }
+            }
+            catch (TaskCanceledException)
+            {
+            }
+        }
+
         protected override async Task OnParametersSetAsync()
         {
             if (Page < 1) Page = 1;
+            _pageSelected = Page;
             if (plans is null || Page != pageNumber)
             {
                 await LoadPage(Page);
             }
         }
 
-        private async Task LoadPage(int page)
+        private async Task PageChanged(int page)
         {
-            isLoading = true;
+            _pageSelected = page;
+            await LoadPage(page);
+        }
+
+        private async Task LoadPage(int page, bool showLoading = true)
+        {
             errorMessage = null;
             pageNumber = page;
+
+            if (showLoading)
+            {
+                isLoading = true;
+            }
 
             try
             {
@@ -59,6 +109,47 @@ namespace GMMS.App.Feature.MembershipPlan
             {
                 isLoading = false;
             }
+        }
+
+        private async Task OpenCreateDialog()
+        {
+            var dialog = await DialogService.ShowAsync<MembershipPlanCreate>("Create Membership Plan");
+            var result = await dialog.Result;
+
+            if (result is not null && !result.Canceled)
+            {
+                await LoadPage(1);
+            }
+        }
+
+        private async Task OpenEditDialog(int planId)
+        {
+            var parameters = new DialogParameters<MembershipPlanEdit> { { x => x.PlanId, planId } };
+            var dialog = await DialogService.ShowAsync<MembershipPlanEdit>("Edit Membership Plan", parameters);
+            var result = await dialog.Result;
+
+            if (result is not null && !result.Canceled)
+            {
+                await LoadPage(pageNumber);
+            }
+        }
+
+        private async Task OpenDeleteDialog(int planId)
+        {
+            var parameters = new DialogParameters<MembershipPlanDelete> { { x => x.PlanId, planId } };
+            var dialog = await DialogService.ShowAsync<MembershipPlanDelete>("Delete Membership Plan", parameters);
+            var result = await dialog.Result;
+
+            if (result is not null && !result.Canceled)
+            {
+                await LoadPage(pageNumber);
+            }
+        }
+
+        public void Dispose()
+        {
+            _searchCts?.Cancel();
+            _searchCts?.Dispose();
         }
     }
 }

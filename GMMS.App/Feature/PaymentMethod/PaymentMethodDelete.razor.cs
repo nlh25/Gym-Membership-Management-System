@@ -2,20 +2,20 @@ using GMMS.App.Services;
 using GMMS.Domain;
 using GMMS.Domain.Features.PaymentMethod.Models;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
+using MudBlazor;
 
 namespace GMMS.App.Feature.PaymentMethod
 {
     public partial class PaymentMethodDelete : ComponentBase
     {
+        [CascadingParameter]
+        private IMudDialogInstance MudDialog { get; set; } = null!;
+
         [Parameter]
-        public int Id { get; set; }
+        public int PaymentMethodId { get; set; }
 
         [Inject]
         private ApiService ApiService { get; set; } = null!;
-
-        [Inject]
-        private NavigationManager Nav { get; set; } = null!;
 
         private PaymentMethodModel? method;
         private bool isLoading = true;
@@ -26,7 +26,7 @@ namespace GMMS.App.Feature.PaymentMethod
         {
             try
             {
-                var result = await ApiService.GetPaymentMethodDetailsAsync<Result<PaymentMethodModel>>(Id);
+                var result = await ApiService.GetPaymentMethodDetailsAsync<Result<PaymentMethodModel>>(PaymentMethodId);
                 if (result?.IsSuccess == true && result.Data is not null)
                 {
                     method = result.Data;
@@ -46,6 +46,11 @@ namespace GMMS.App.Feature.PaymentMethod
             }
         }
 
+        private void Cancel()
+        {
+            MudDialog.Cancel();
+        }
+
         private async Task ConfirmDelete()
         {
             isDeleting = true;
@@ -54,10 +59,10 @@ namespace GMMS.App.Feature.PaymentMethod
 
             try
             {
-                var result = await ApiService.DeletePaymentMethodAsync<Result<bool>>(Id);
+                var result = await ApiService.DeletePaymentMethodAsync<Result<bool>>(PaymentMethodId);
                 if (result?.IsSuccess == true)
                 {
-                    Nav.NavigateTo("paymentmethod-list");
+                    MudDialog.Close(DialogResult.Ok(true));
                 }
                 else
                 {

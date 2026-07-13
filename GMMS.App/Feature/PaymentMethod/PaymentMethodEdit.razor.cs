@@ -2,31 +2,31 @@ using GMMS.App.Services;
 using GMMS.Domain;
 using GMMS.Domain.Features.PaymentMethod.Models;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace GMMS.App.Feature.PaymentMethod
 {
     public partial class PaymentMethodEdit : ComponentBase
     {
+        [CascadingParameter]
+        private IMudDialogInstance MudDialog { get; set; } = null!;
+
         [Parameter]
-        public int Id { get; set; }
+        public int PaymentMethodId { get; set; }
 
         [Inject]
         private ApiService ApiService { get; set; } = null!;
 
-        [Inject]
-        private NavigationManager Navigation { get; set; } = null!;
-
         private PaymentMethodUpdateRequestModel request = new();
-        private bool isLoading;
+        private bool isLoading = true;
+        private bool isSaving;
         private string? errorMessage;
 
         protected override async Task OnInitializedAsync()
         {
-            isLoading = true;
-
             try
             {
-                var result = await ApiService.GetPaymentMethodDetailsAsync<Result<PaymentMethodModel>>(Id);
+                var result = await ApiService.GetPaymentMethodDetailsAsync<Result<PaymentMethodModel>>(PaymentMethodId);
                 if (result?.IsSuccess == true && result.Data is not null)
                 {
                     request.PaymentMethodId = result.Data.PaymentMethodId;
@@ -49,16 +49,21 @@ namespace GMMS.App.Feature.PaymentMethod
             }
         }
 
+        private void Cancel()
+        {
+            MudDialog.Cancel();
+        }
+
         private async Task Update()
         {
             errorMessage = null;
 
             try
             {
-                var result = await ApiService.UpdatePaymentMethodAsync<PaymentMethodUpdateRequestModel, Result<PaymentMethodModel>>(Id, request);
+                var result = await ApiService.UpdatePaymentMethodAsync<PaymentMethodUpdateRequestModel, Result<PaymentMethodModel>>(PaymentMethodId, request);
                 if (result?.IsSuccess == true)
                 {
-                    Navigation.NavigateTo("/paymentmethod-list");
+                    MudDialog.Close(DialogResult.Ok(true));
                 }
                 else
                 {

@@ -1,40 +1,56 @@
-@page "/paymentmethod-edit/{id:int}"
+@using MudBlazor
 
-<h3>Edit Payment Method</h3>
+<MudDialog MaxWidth="MaxWidth.Small" FullWidth="true">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" Color="Color.Primary" /> Edit Payment Method
+        </MudText>
+    </TitleContent>
 
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
+    <DialogContent>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+        }
 
-@if (isLoading)
-{
-    <div class="d-flex justify-content-center">
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-    </div>
-}
-else
-{
-    <div class="row">
-        <div class="col-md-6">
-            <EditForm Model="request" OnValidSubmit="Update">
-                <div class="mb-3">
-                    <label for="paymentMethodCode" class="form-label">Payment Method Code</label>
-                    <InputText id="paymentMethodCode" class="form-control" @bind-Value="request.PaymentMethodCode" />
-                </div>
-                <div class="mb-3">
-                    <label for="name" class="form-label">Name</label>
-                    <InputText id="name" class="form-control" @bind-Value="request.Name" />
-                </div>
-                <div class="mb-3 form-check">
-                    <InputCheckbox id="isActive" class="form-check-input" @bind-Value="request.IsActive" />
-                    <label for="isActive" class="form-check-label">Active</label>
-                </div>
-                <button type="submit" class="btn btn-primary">Update</button>
-                <a class="btn btn-secondary ms-2" href="paymentmethod-list">Cancel</a>
-            </EditForm>
-        </div>
-    </div>
-}
+        @if (isLoading)
+        {
+            <div class="d-flex justify-center pa-6">
+                <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+            </div>
+        }
+        else
+        {
+            <MudTextField @bind-Value="request.PaymentMethodCode"
+                          Label="Payment Method Code"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          RequiredError="Payment Method Code is required."
+                          Class="mb-3" />
+
+            <MudTextField @bind-Value="request.Name"
+                          Label="Name"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          RequiredError="Name is required."
+                          Class="mb-3" />
+
+            <MudSwitch @bind-Checked="request.IsActive" T="bool" Label="Active" Color="Color.Primary" Class="mb-3" />
+        }
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text" Class="mr-2">Cancel</MudButton>
+        <MudButton OnClick="Update"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Save"
+                   Disabled="@isSaving">
+            @if (isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Update
+        </MudButton>
+    </DialogActions>
+</MudDialog>

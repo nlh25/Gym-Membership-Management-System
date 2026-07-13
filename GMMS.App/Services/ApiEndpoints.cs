@@ -9,8 +9,9 @@
         public const string UpdateMember = "api/Member/{id}";
         public const string DeleteMember = "api/Member/{id}";
         #endregion
-        #region Membership Endpoints
+#region Membership Endpoints
         public const string MembershipList = "api/MemberShip";
+        public const string MembershipListAll = "api/MemberShip/all";
         public const string MembershipDetails = "api/MemberShip/{id}";
         public const string CreateMembership = "api/MemberShip";
         public const string UpdateMembership = "api/MemberShip/{id}";

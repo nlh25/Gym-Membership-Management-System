@@ -21,9 +21,9 @@ namespace GMMS.App.Feature.Membership
         private ApiService ApiService { get; set; } = null!;
 
         private CreateMemberShipRequestModel request = new();
-        private List<MemberModel>? members;
-        private List<MemberShipPlanModel>? plans;
-        private List<PaymentMethodModel>? paymentMethods;
+        private List<MemberModel> members = new();
+        private List<MemberShipPlanModel> plans = new();
+        private List<PaymentMethodModel> paymentMethods = new();
         private bool isLoadingData = true;
         private bool isSaving;
         private string? errorMessage;
@@ -54,20 +54,26 @@ namespace GMMS.App.Feature.Membership
             {
                 var memberResult = await ApiService.GetMemberListAsync<Result<MemberListResponseModel>>(1, 1000);
                 if (memberResult?.IsSuccess == true && memberResult.Data is not null)
-                    members = memberResult.Data.Members;
+                    members = memberResult.Data.Members ?? new();
+                else
+                    errorMessage = memberResult?.Message ?? "Failed to load members.";
 
                 var planResult = await ApiService.GetMembershipPlanListAsync<Result<MemberShipPlanListResponseModel>>(1, 1000);
                 if (planResult?.IsSuccess == true && planResult.Data is not null)
-                    plans = planResult.Data.MemberShipPlans;
+                    plans = planResult.Data.MemberShipPlans ?? new();
+                else if (string.IsNullOrEmpty(errorMessage))
+                    errorMessage = planResult?.Message ?? "Failed to load membership plans.";
 
                 var methodResult = await ApiService.GetPaymentMethodListAsync<Result<PaymentMethodListResponseModel>>(1, 1000);
                 if (methodResult?.IsSuccess == true && methodResult.Data is not null)
-                    paymentMethods = methodResult.Data.PaymentMethods;
+                    paymentMethods = methodResult.Data.PaymentMethods ?? new();
+                else if (string.IsNullOrEmpty(errorMessage))
+                    errorMessage = methodResult?.Message ?? "Failed to load payment methods.";
 
                 if (MemberId > 0)
                 {
                     request.MemberId = MemberId;
-                    var member = members?.FirstOrDefault(m => m.MemberId == MemberId);
+                    var member = members.FirstOrDefault(m => m.MemberId == MemberId);
                     selectedMemberName = member is not null
                         ? $"{member.Name} ({member.MemberCode})"
                         : $"Member #{MemberId}";
@@ -80,6 +86,7 @@ namespace GMMS.App.Feature.Membership
             finally
             {
                 isLoadingData = false;
+                StateHasChanged();
             }
         }
 

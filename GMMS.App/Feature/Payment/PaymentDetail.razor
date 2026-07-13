@@ -1,0 +1,53 @@
+@using MudBlazor
+
+<MudDialog MaxWidth="MaxWidth.Small" FullWidth="true">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Receipt" Class="mr-3" Color="Color.Primary" /> Payment Details
+        </MudText>
+    </TitleContent>
+
+    <DialogContent>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+        }
+
+        @if (isLoading)
+        {
+            <div class="d-flex justify-center pa-6">
+                <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+            </div>
+        }
+        else if (detail is not null)
+        {
+            <MudTextField Value="@detail.MemberName" Label="Member" Variant="Variant.Outlined"
+                          ReadOnly="true" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Person" Class="mb-4" />
+
+            <MudTextField Value="@detail.MembershipName" Label="Membership" Variant="Variant.Outlined"
+                          ReadOnly="true" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.CardMembership" Class="mb-4" />
+
+            <MudTextField Value="@detail.PaymentMethodName" Label="Payment Method" Variant="Variant.Outlined"
+                          ReadOnly="true" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Wallet" Class="mb-4" />
+
+            <MudTextField Value="@detail.Amount.ToString("C2")" Label="Amount" Variant="Variant.Outlined"
+                          ReadOnly="true" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.AttachMoney" Class="mb-4" />
+
+            <MudTextField Value="@detail.Status" Label="Status" Variant="Variant.Outlined"
+                          ReadOnly="true" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Flag" Class="mb-4" />
+
+            <MudTextField Value="@detail.CreatedAt.ToString("yyyy-MM-dd HH:mm")" Label="Created At" Variant="Variant.Outlined"
+                          ReadOnly="true" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.CalendarToday" Class="mb-4" />
+        }
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text">Close</MudButton>
+    </DialogActions>
+</MudDialog>

@@ -23,7 +23,7 @@ namespace GMMS.App.Feature.Membership
 
         private UpdateMembershipRequestModel request = new();
         private MembershipDetailModel? detail;
-        private List<MemberShipPlanModel>? plans;
+        private List<MemberShipPlanModel> plans = new();
         private bool isLoadingData = true;
         private bool isSaving;
         private string? errorMessage;
@@ -60,7 +60,9 @@ namespace GMMS.App.Feature.Membership
 
                 var planResult = await ApiService.GetMembershipPlanListAsync<Result<MemberShipPlanListResponseModel>>(1, 1000);
                 if (planResult?.IsSuccess == true && planResult.Data is not null)
-                    plans = planResult.Data.MemberShipPlans;
+                    plans = planResult.Data.MemberShipPlans ?? new();
+                else if (string.IsNullOrEmpty(errorMessage))
+                    errorMessage = planResult?.Message ?? "Failed to load membership plans.";
 
                 if (detail is not null && plans is not null)
                     RecalcEndDate();
@@ -72,6 +74,7 @@ namespace GMMS.App.Feature.Membership
             finally
             {
                 isLoadingData = false;
+                StateHasChanged();
             }
         }
 

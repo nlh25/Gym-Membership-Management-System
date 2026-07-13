@@ -2,31 +2,31 @@ using GMMS.App.Services;
 using GMMS.Domain;
 using GMMS.Domain.Features.MemberShipPlan.Models;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace GMMS.App.Feature.MembershipPlan
 {
     public partial class MembershipPlanEdit : ComponentBase
     {
+        [CascadingParameter]
+        private IMudDialogInstance MudDialog { get; set; } = null!;
+
         [Parameter]
-        public int Id { get; set; }
+        public int PlanId { get; set; }
 
         [Inject]
         private ApiService ApiService { get; set; } = null!;
 
-        [Inject]
-        private NavigationManager Navigation { get; set; } = null!;
-
         private UpdateMemberShipPlanRequestModel request = new();
-        private bool isLoading;
+        private bool isLoading = true;
+        private bool isSaving;
         private string? errorMessage;
 
         protected override async Task OnInitializedAsync()
         {
-            isLoading = true;
-
             try
             {
-                var result = await ApiService.GetMembershipPlanDetailsAsync<Result<MembershipPlanDetailModel>>(Id);
+                var result = await ApiService.GetMembershipPlanDetailsAsync<Result<MembershipPlanDetailModel>>(PlanId);
                 if (result?.IsSuccess == true && result.Data is not null)
                 {
                     request.MemberShipPlanId = result.Data.MemberShipPlanId;
@@ -51,16 +51,21 @@ namespace GMMS.App.Feature.MembershipPlan
             }
         }
 
+        private void Cancel()
+        {
+            MudDialog.Cancel();
+        }
+
         private async Task Update()
         {
             errorMessage = null;
 
             try
             {
-                var result = await ApiService.UpdateMembershipPlanAsync<UpdateMemberShipPlanRequestModel, Result<MemberShipPlanModel>>(Id, request);
+                var result = await ApiService.UpdateMembershipPlanAsync<UpdateMemberShipPlanRequestModel, Result<MemberShipPlanModel>>(PlanId, request);
                 if (result?.IsSuccess == true)
                 {
-                    Navigation.NavigateTo("/membershipplan-list");
+                    MudDialog.Close(DialogResult.Ok(true));
                 }
                 else
                 {

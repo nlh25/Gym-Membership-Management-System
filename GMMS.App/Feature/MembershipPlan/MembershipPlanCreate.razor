@@ -1,43 +1,71 @@
-@page "/membershipplan-create"
+@using MudBlazor
 
-<h3>Create Membership Plan</h3>
+<MudDialog MaxWidth="MaxWidth.Small" FullWidth="true">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.AddCard" Class="mr-3" Color="Color.Primary" /> Create Membership Plan
+        </MudText>
+    </TitleContent>
 
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
+    <DialogContent>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+        }
 
-<div class="row">
-    <div class="col-md-6">
-        <EditForm Model="request" OnValidSubmit="Save">
-            <div class="mb-3">
-                <label for="planCode" class="form-label">Plan Code</label>
-                <InputText id="planCode" class="form-control" @bind-Value="request.PlanCode" />
-            </div>
-            <div class="mb-3">
-                <label for="planName" class="form-label">Plan Name</label>
-                <InputText id="planName" class="form-control" @bind-Value="request.PlanName" />
-            </div>
-            <div class="mb-3">
-                <label for="description" class="form-label">Description</label>
-                <InputTextArea id="description" class="form-control" @bind-Value="request.Description" />
-            </div>
-            <div class="mb-3">
-                <label for="durationDays" class="form-label">Duration (Days)</label>
-                <InputNumber id="durationDays" class="form-control" @bind-Value="request.DurationDays" />
-            </div>
-            <div class="mb-3">
-                <label for="price" class="form-label">Price</label>
-                <InputNumber id="price" class="form-control" @bind-Value="request.Price" />
-            </div>
-            <button type="submit" class="btn btn-primary" disabled="@isLoading">
-                @if (isLoading)
-                {
-                    <span class="spinner-border spinner-border-sm me-1"></span>
-                }
-                Save
-            </button>
-            <a class="btn btn-secondary ms-2" href="membershipplan-list">Cancel</a>
-        </EditForm>
-    </div>
-</div>
+        <MudTextField @bind-Value="request.PlanCode"
+                      Label="Plan Code"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      RequiredError="Plan Code is required."
+                      Class="mb-3" />
+
+        <MudTextField @bind-Value="request.PlanName"
+                      Label="Plan Name"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      RequiredError="Plan Name is required."
+                      Class="mb-3" />
+
+        <MudTextField @bind-Value="request.Description"
+                      Label="Description"
+                      Variant="Variant.Outlined"
+                      MultiLine="true"
+                      Rows="3"
+                      Class="mb-3" />
+
+        <MudNumericField @bind-Value="request.DurationDays"
+                         T="int"
+                         Label="Duration (Days)"
+                         Variant="Variant.Outlined"
+                         Required="true"
+                         RequiredError="Duration is required."
+                         Min="1"
+                         Class="mb-3" />
+
+        <MudNumericField @bind-Value="request.Price"
+                         T="decimal"
+                         Label="Price"
+                         Variant="Variant.Outlined"
+                         Required="true"
+                         RequiredError="Price is required."
+                         Min="0"
+                         Step="0.01m"
+                         Class="mb-3" />
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text" Class="mr-2">Cancel</MudButton>
+        <MudButton OnClick="Save"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Save"
+                   Disabled="@isSaving">
+            @if (isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
