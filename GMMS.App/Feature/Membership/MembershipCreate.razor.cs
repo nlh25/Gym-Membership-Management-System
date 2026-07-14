@@ -27,7 +27,6 @@ namespace GMMS.App.Feature.Membership
         private bool isLoadingData = true;
         private bool isSaving;
         private string? errorMessage;
-        private List<string> validationErrors = new();
 
         private string? selectedMemberName;
 
@@ -96,43 +95,29 @@ namespace GMMS.App.Feature.Membership
             MudDialog.Cancel();
         }
 
-        private void ValidateAmount(decimal value)
-        {
-            validationErrors.RemoveAll(e => e.StartsWith("Amount"));
-            
-            if (value <= 0)
-            {
-                validationErrors.Add("Amount: Amount must be greater than 0.");
-            }
-            else if (value > 1000000)
-            {
-                validationErrors.Add("Amount: Amount cannot exceed 1,000,000.");
-            }
-        }
-
-        private bool ValidateAll()
-        {
-            validationErrors.Clear();
-
-            if (request.MemberId <= 0)
-                validationErrors.Add("Member is required.");
-
-            if (request.MembershipPlanId <= 0)
-                validationErrors.Add("Membership plan is required.");
-
-            if (request.PaymentMethodId <= 0)
-                validationErrors.Add("Payment method is required.");
-
-            ValidateAmount(request.Amount);
-
-            errorMessage = validationErrors.Count > 0 ? string.Join(" ", validationErrors) : null;
-            return validationErrors.Count == 0;
-        }
-
         private async Task Save()
         {
-            if (!ValidateAll())
+            if (request.MemberId <= 0)
             {
+                errorMessage = "Member is required.";
+                return;
+            }
+
+            if (request.MembershipPlanId <= 0)
+            {
+                errorMessage = "Membership plan is required.";
+                return;
+            }
+
+            if (request.PaymentMethodId <= 0)
+            {
+                errorMessage = "Payment method is required.";
+                return;
+            }
+
+            if (request.Amount <= 0)
+            {
+                errorMessage = "Amount must be greater than 0.";
                 return;
             }
 

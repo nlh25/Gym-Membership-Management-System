@@ -10,16 +10,10 @@
     <DialogContent>
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <MudAlert Severity="Severity.Error" Class="mb-4">
-                @foreach (var error in errorMessage.Split('\n'))
-                {
-                    <div>@error</div>
-                }
-            </MudAlert>
+            <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
         }
 
         <MudTextField @bind-Value="request.MemberCode"
-                      @oninput="OnMemberCodeChanged"
                       Label="Member Code"
                       Variant="Variant.Outlined"
                       Required="true"
@@ -29,7 +23,6 @@
                       HelperText="Uppercase letters, numbers, and hyphens only (max 50 chars)" />
 
         <MudTextField @bind-Value="request.Name"
-                      @oninput="OnNameChanged"
                       Label="Name"
                       Variant="Variant.Outlined"
                       Required="true"

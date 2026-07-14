@@ -27,7 +27,6 @@ namespace GMMS.App.Feature.Membership
         private bool isLoadingData = true;
         private bool isSaving;
         private string? errorMessage;
-        private List<string> validationErrors = new();
 
         private DateOnly? newEndDate;
 
@@ -97,21 +96,11 @@ namespace GMMS.App.Feature.Membership
             MudDialog.Cancel();
         }
 
-        private bool ValidateAll()
-        {
-            validationErrors.Clear();
-
-            if (request.MembershipPlanId <= 0)
-                validationErrors.Add("Membership plan is required.");
-
-            errorMessage = validationErrors.Count > 0 ? string.Join(" ", validationErrors) : null;
-            return validationErrors.Count == 0;
-        }
-
         private async Task Update()
         {
-            if (!ValidateAll())
+            if (request.MembershipPlanId <= 0)
             {
+                errorMessage = "Please select a membership plan.";
                 return;
             }
 

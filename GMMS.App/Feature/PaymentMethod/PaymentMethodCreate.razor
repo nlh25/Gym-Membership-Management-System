@@ -14,7 +14,6 @@
         }
 
         <MudTextField @bind-Value="request.PaymentMethodCode"
-                      @oninput="OnCodeChanged"
                       Label="Code"
                       Variant="Variant.Outlined"
                       Required="true"
@@ -24,7 +23,6 @@
                       HelperText="Uppercase letters, numbers, and hyphens only (max 50 chars)" />
 
         <MudTextField @bind-Value="request.Name"
-                      @oninput="OnNameChanged"
                       Label="Name"
                       Variant="Variant.Outlined"
                       Required="true"

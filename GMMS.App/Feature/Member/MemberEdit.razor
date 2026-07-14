@@ -32,7 +32,6 @@
                           HelperText="Uppercase letters, numbers, and hyphens only (max 50 chars)" />
 
             <MudTextField @bind-Value="request.Name"
-                          @oninput="OnNameChanged"
                           Label="Name"
                           Variant="Variant.Outlined"
                           Required="true"
@@ -48,7 +47,7 @@
         <MudButton OnClick="Update"
                    Variant="Variant.Filled"
                    Color="Color.Primary"
-                   Disabled="@isLoading">
+                   Disabled="@isSaving">
             @if (isSaving)
             {
                 <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />

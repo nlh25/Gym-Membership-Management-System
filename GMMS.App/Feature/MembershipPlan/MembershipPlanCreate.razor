@@ -14,7 +14,6 @@
         }
 
         <MudTextField @bind-Value="request.PlanCode"
-                      @oninput="OnPlanCodeChanged"
                       Label="Plan Code"
                       Variant="Variant.Outlined"
                       Required="true"
@@ -24,7 +23,6 @@
                       HelperText="Uppercase letters, numbers, and hyphens only (max 50 chars)" />
 
         <MudTextField @bind-Value="request.PlanName"
-                      @oninput="OnPlanNameChanged"
                       Label="Plan Name"
                       Variant="Variant.Outlined"
                       Required="true"
@@ -33,7 +31,6 @@
                       Class="mb-3" />
 
         <MudTextField @bind-Value="request.Description"
-                      @oninput="OnDescriptionChanged"
                       Label="Description"
                       Variant="Variant.Outlined"
                       MultiLine="true"
