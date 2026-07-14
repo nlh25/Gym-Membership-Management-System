@@ -1,5 +1,8 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using GMMS.Database.AppDbContextModels;
 using GMMS.Domain.Features.Member;
+using GMMS.Domain.Features.Member.Models;
 using GMMS.Domain.Features.MemberShip;
 using GMMS.Domain.Features.MemberShipPlan;
 using GMMS.Domain.Features.Payment;
@@ -19,6 +22,9 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 {
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DbConnection"));
 });
+
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateMemberRequestValidator>();
 
 builder.Services.AddScoped<MemberService>();
 builder.Services.AddScoped<MemberShipPlanService>();

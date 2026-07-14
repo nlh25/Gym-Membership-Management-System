@@ -1,4 +1,5 @@
-﻿using GMMS.Database.AppDbContextModels;
+﻿using FluentValidation;
+using GMMS.Database.AppDbContextModels;
 using GMMS.Domain.Features.Member.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,20 +13,40 @@ namespace GMMS.Domain.Features.Member
     public class MemberService
     {
         private readonly AppDbContext _db;
+        private readonly IValidator<CreateMemberRequestModel> _createValidator;
+        private readonly IValidator<UpdateMemberRequestModel> _updateValidator;
+        private readonly IValidator<MemberListRequestModel> _listValidator;
 
-        public MemberService(AppDbContext db)
+        public MemberService(
+            AppDbContext db,
+            IValidator<CreateMemberRequestModel> createValidator,
+            IValidator<UpdateMemberRequestModel> updateValidator,
+            IValidator<MemberListRequestModel> listValidator)
         {
             _db = db;
+            _createValidator = createValidator;
+            _updateValidator = updateValidator;
+            _listValidator = listValidator;
         }
         
         public Result<MemberListResponseModel> GetList(MemberListRequestModel request)
         {
+            var validationResult = _listValidator.Validate(request);
+            if (!validationResult.IsValid)
+            {
+                return new Result<MemberListResponseModel>
+                {
+                    IsSuccess = false,
+                    Message = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage))
+                };
+            }
+
             try
             {
                 if (request.PageNumber <= 0)
                     request.PageNumber = 1;
 
-                if (request.PageSize <= 0)
+                if (request.PageSize <= 0 || request.PageSize > 100)
                     request.PageSize = 10;
 
                 var query = _db.TblMembers
@@ -118,17 +139,30 @@ namespace GMMS.Domain.Features.Member
         }
         public Result<MemberModel> Create(CreateMemberRequestModel request)
         {
+            var validationResult = _createValidator.Validate(request);
+            if (!validationResult.IsValid)
+            {
+                return new Result<MemberModel>
+                {
+                    IsSuccess = false,
+                    Message = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage))
+                };
+            }
+
             try
             {
+                request.MemberCode = request.MemberCode.Trim().ToUpperInvariant();
+                request.Name = request.Name.Trim();
+
                 var exists = _db.TblMembers
-                    .Any(x => !x.IsDeleted && x.MemberCode == request.MemberCode);
+                    .Any(x => !x.IsDeleted && x.MemberCode.ToUpper() == request.MemberCode);
 
                 if (exists)
                 {
                     return new Result<MemberModel>
                     {
                         IsSuccess = false,
-                        Message = "Member  already exists."
+                        Message = "Member already exists."
                     };
                 }
                 var member = new TblMember
@@ -138,7 +172,6 @@ namespace GMMS.Domain.Features.Member
                     IsDeleted = false,
                     CreatedAt = DateTime.UtcNow
                 };
-
 
 
                 _db.TblMembers.Add(member);
@@ -169,6 +202,16 @@ namespace GMMS.Domain.Features.Member
         }
         public Result<MemberModel> Update(int id, UpdateMemberRequestModel request)
         {
+            var validationResult = _updateValidator.Validate(request);
+            if (!validationResult.IsValid)
+            {
+                return new Result<MemberModel>
+                {
+                    IsSuccess = false,
+                    Message = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage))
+                };
+            }
+
             try
             {
                 var member = _db.TblMembers
@@ -183,21 +226,23 @@ namespace GMMS.Domain.Features.Member
                     };
                 }
 
+                request.MemberCode = request.MemberCode.Trim().ToUpperInvariant();
+                request.Name = request.Name.Trim();
+
                 var exists = _db.TblMembers
-                    .Any(x => !x.IsDeleted && x.MemberCode == request.MemberCode && x.MemberId != request.MemberId);
+                    .Any(x => !x.IsDeleted && x.MemberCode.ToUpper() == request.MemberCode && x.MemberId != request.MemberId);
                 if (exists)
                 {
                     return new Result<MemberModel>
                     {
                         IsSuccess = false,
-                        Message = "Member  already exists."
+                        Message = "Member already exists."
                     };
                 }
 
                 member.MemberCode = request.MemberCode;
                 member.Name = request.Name;
                 member.UpdatedAt = DateTime.UtcNow;
-
              
                 _db.SaveChanges();
 
