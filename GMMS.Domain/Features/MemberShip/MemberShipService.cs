@@ -1,4 +1,5 @@
-﻿using GMMS.Database.AppDbContextModels;
+﻿using FluentValidation;
+using GMMS.Database.AppDbContextModels;
 using GMMS.Domain.Enums;
 using GMMS.Domain.Features.MemberShip.Models;
 using Microsoft.EntityFrameworkCore;
@@ -13,19 +14,39 @@ namespace GMMS.Domain.Features.MemberShip
     public class MemberShipService
     {
         private readonly AppDbContext _db;
-        public MemberShipService(AppDbContext db)
+        private readonly IValidator<MemberShipListRequestModel> _listValidator;
+        private readonly IValidator<AllMemberShipListRequestModel> _allListValidator;
+        private readonly IValidator<CreateMemberShipRequestModel> _createValidator;
+        private readonly IValidator<UpdateMembershipRequestModel> _updateValidator;
+
+        public MemberShipService(
+            AppDbContext db,
+            IValidator<MemberShipListRequestModel> listValidator,
+            IValidator<AllMemberShipListRequestModel> allListValidator,
+            IValidator<CreateMemberShipRequestModel> createValidator,
+            IValidator<UpdateMembershipRequestModel> updateValidator)
         {
             _db = db;
+            _listValidator = listValidator;
+            _allListValidator = allListValidator;
+            _createValidator = createValidator;
+            _updateValidator = updateValidator;
         }
+
         public Result<MemberShipListResponseModel> GetList(MemberShipListRequestModel request)
         {
+            var validationResult = _listValidator.Validate(request);
+            if (!validationResult.IsValid)
+            {
+                return new Result<MemberShipListResponseModel>
+                {
+                    IsSuccess = false,
+                    Message = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage))
+                };
+            }
+
             try
             {
-                if (request.PageNumber <= 0)
-                    request.PageNumber = 1;
-
-                if (request.PageSize <= 0)
-                    request.PageSize = 10;
                 var query = _db.TblMemberships
                     .AsNoTracking()
                     .Where(x => !x.IsDeleted && x.MemberId == request.MemberId);
@@ -48,6 +69,7 @@ namespace GMMS.Domain.Features.MemberShip
                         Status = x.Status
                     })
                     .ToList();
+
                 return new Result<MemberShipListResponseModel>
                 {
                     IsSuccess = true,
@@ -65,21 +87,24 @@ namespace GMMS.Domain.Features.MemberShip
                 {
                     IsSuccess = false,
                     Message = ex.Message
-
                 };
             }
         }
 
         public Result<MemberShipListResponseModel> GetAllList(AllMemberShipListRequestModel request)
         {
+            var validationResult = _allListValidator.Validate(request);
+            if (!validationResult.IsValid)
+            {
+                return new Result<MemberShipListResponseModel>
+                {
+                    IsSuccess = false,
+                    Message = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage))
+                };
+            }
+
             try
             {
-                if (request.PageNumber <= 0)
-                    request.PageNumber = 1;
-
-                if (request.PageSize <= 0)
-                    request.PageSize = 10;
-
                 var query = _db.TblMemberships
                     .AsNoTracking()
                     .Where(x => !x.IsDeleted);
@@ -87,7 +112,7 @@ namespace GMMS.Domain.Features.MemberShip
                 if (!string.IsNullOrWhiteSpace(request.SearchTerm))
                 {
                     var search = request.SearchTerm.Trim().ToLower();
-                    query = query.Where(x => x.Member.MemberCode.ToLower().Contains(search) 
+                    query = query.Where(x => x.Member.MemberCode.ToLower().Contains(search)
                         || x.Member.Name.ToLower().Contains(search)
                         || x.MembershipPlan.PlanName.ToLower().Contains(search));
                 }
@@ -136,6 +161,7 @@ namespace GMMS.Domain.Features.MemberShip
                 };
             }
         }
+
         public Result<MembershipDetailModel> GetById(int membershipId)
         {
             try
@@ -159,6 +185,7 @@ namespace GMMS.Domain.Features.MemberShip
                         UpdatedAt = x.UpdatedAt
                     })
                     .FirstOrDefault();
+
                 if (membership == null)
                 {
                     return new Result<MembershipDetailModel>
@@ -183,11 +210,21 @@ namespace GMMS.Domain.Features.MemberShip
                 };
             }
         }
+
         public Result<MembershipDetailModel> Create(CreateMemberShipRequestModel request)
         {
+            var validationResult = _createValidator.Validate(request);
+            if (!validationResult.IsValid)
+            {
+                return new Result<MembershipDetailModel>
+                {
+                    IsSuccess = false,
+                    Message = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage))
+                };
+            }
+
             try
             {
-
                 var member = _db.TblMembers
                     .FirstOrDefault(x => !x.IsDeleted && x.MemberId == request.MemberId);
 
@@ -200,11 +237,10 @@ namespace GMMS.Domain.Features.MemberShip
                     };
                 }
 
-
-
                 var plan = _db.TblMembershipPlans
                     .FirstOrDefault(x =>
                         !x.IsDeleted &&
+                        x.IsActive &&
                         x.MembershipPlanId == request.MembershipPlanId);
 
                 if (plan == null)
@@ -212,11 +248,9 @@ namespace GMMS.Domain.Features.MemberShip
                     return new Result<MembershipDetailModel>
                     {
                         IsSuccess = false,
-                        Message = "Membership plan not found."
+                        Message = "Membership plan not found or inactive."
                     };
                 }
-
-
 
                 var exists = _db.TblMemberships
                     .Any(x =>
@@ -234,14 +268,14 @@ namespace GMMS.Domain.Features.MemberShip
                 }
 
                 var paymentMethod = _db.TblPaymentMethods
-                    .FirstOrDefault(x => !x.IsDeleted && x.PaymentMethodId == request.PaymentMethodId);
+                    .FirstOrDefault(x => !x.IsDeleted && x.IsActive && x.PaymentMethodId == request.PaymentMethodId);
 
                 if (paymentMethod == null)
                 {
                     return new Result<MembershipDetailModel>
                     {
                         IsSuccess = false,
-                        Message = "Payment method not found."
+                        Message = "Payment method not found or inactive."
                     };
                 }
 
@@ -251,12 +285,9 @@ namespace GMMS.Domain.Features.MemberShip
                 {
                     MemberId = request.MemberId,
                     MembershipPlanId = request.MembershipPlanId,
-
                     StartDate = today,
                     EndDate = today.AddDays(plan.DurationDays),
-
                     Status = MembershipPlanStatus.Active.ToString(),
-
                     IsDeleted = false,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -281,24 +312,18 @@ namespace GMMS.Domain.Features.MemberShip
                 {
                     IsSuccess = true,
                     Message = "Membership and payment created successfully.",
-
                     Data = new MembershipDetailModel
                     {
                         MembershipId = newMembership.MembershipId,
-
                         MemberId = member.MemberId,
                         MemberCode = member.MemberCode,
                         MemberName = member.Name,
-
                         MembershipPlanId = plan.MembershipPlanId,
                         PlanCode = plan.PlanCode,
                         PlanName = plan.PlanName,
-
                         StartDate = newMembership.StartDate,
                         EndDate = newMembership.EndDate,
-
                         Status = newMembership.Status,
-
                         CreatedAt = newMembership.CreatedAt
                     }
                 };
@@ -312,13 +337,25 @@ namespace GMMS.Domain.Features.MemberShip
                 };
             }
         }
+
         public Result<MembershipDetailModel> Update(UpdateMembershipRequestModel request)
         {
+            var validationResult = _updateValidator.Validate(request);
+            if (!validationResult.IsValid)
+            {
+                return new Result<MembershipDetailModel>
+                {
+                    IsSuccess = false,
+                    Message = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage))
+                };
+            }
+
             try
             {
                 var membership = _db.TblMemberships
                     .Include(x => x.Member)
                     .FirstOrDefault(x => !x.IsDeleted && x.MembershipId == request.MembershipId);
+
                 if (membership == null)
                 {
                     return new Result<MembershipDetailModel>
@@ -327,24 +364,29 @@ namespace GMMS.Domain.Features.MemberShip
                         Message = "Membership not found."
                     };
                 }
+
                 var plan = _db.TblMembershipPlans
                     .FirstOrDefault(x =>
                         !x.IsDeleted &&
+                        x.IsActive &&
                         x.MembershipPlanId == request.MembershipPlanId);
+
                 if (plan == null)
                 {
                     return new Result<MembershipDetailModel>
                     {
                         IsSuccess = false,
-                        Message = "Membership plan not found."
+                        Message = "Membership plan not found or inactive."
                     };
                 }
+
                 var exits = _db.TblMemberships
                     .Any(x =>
                         !x.IsDeleted &&
                         x.MemberId == membership.MemberId &&
                         x.MembershipId != membership.MembershipId &&
                         x.Status == MembershipPlanStatus.Active.ToString());
+
                 if (exits)
                 {
                     return new Result<MembershipDetailModel>
@@ -353,10 +395,12 @@ namespace GMMS.Domain.Features.MemberShip
                         Message = "Member already has an active membership."
                     };
                 }
+
                 membership.MembershipPlanId = request.MembershipPlanId;
                 membership.EndDate = membership.StartDate.AddDays(plan.DurationDays);
                 membership.UpdatedAt = DateTime.UtcNow;
                 _db.SaveChanges();
+
                 return new Result<MembershipDetailModel>
                 {
                     IsSuccess = true,
@@ -387,12 +431,14 @@ namespace GMMS.Domain.Features.MemberShip
                 };
             }
         }
+
         public Result<bool> Delete(int membershipId)
         {
             try
             {
                 var membership = _db.TblMemberships
                     .FirstOrDefault(x => !x.IsDeleted && x.MembershipId == membershipId);
+
                 if (membership == null)
                 {
                     return new Result<bool>
@@ -401,9 +447,11 @@ namespace GMMS.Domain.Features.MemberShip
                         Message = "Membership not found."
                     };
                 }
+
                 membership.IsDeleted = true;
                 membership.UpdatedAt = DateTime.UtcNow;
                 _db.SaveChanges();
+
                 return new Result<bool>
                 {
                     IsSuccess = true,

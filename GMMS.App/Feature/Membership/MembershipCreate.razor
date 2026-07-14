@@ -72,9 +72,9 @@
                 </select>
             </div>
 
-            <MudNumericField @bind-Value="request.Amount" Label="Amount" Variant="Variant.Outlined"
+            <MudNumericField @bind-Value="request.Amount" T="decimal" Label="Amount" Variant="Variant.Outlined"
                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney"
-                             Min="0" Class="mb-2" />
+                             Min="0.01m" Step="0.01m" Class="mb-2" />
         }
     </DialogContent>
 
