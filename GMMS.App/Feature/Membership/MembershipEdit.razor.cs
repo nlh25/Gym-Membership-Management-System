@@ -58,7 +58,7 @@ namespace GMMS.App.Feature.Membership
                     errorMessage = result?.Message ?? "Membership not found.";
                 }
 
-                var planResult = await ApiService.GetMembershipPlanListAsync<Result<MemberShipPlanListResponseModel>>(1, 1000);
+                var planResult = await ApiService.GetMembershipPlanListAsync<Result<MemberShipPlanListResponseModel>>(1, 100);
                 if (planResult?.IsSuccess == true && planResult.Data is not null)
                     plans = planResult.Data.MemberShipPlans ?? new();
                 else if (string.IsNullOrEmpty(errorMessage))

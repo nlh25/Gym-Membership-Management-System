@@ -52,19 +52,19 @@ namespace GMMS.App.Feature.Membership
         {
             try
             {
-                var memberResult = await ApiService.GetMemberListAsync<Result<MemberListResponseModel>>(1, 1000);
+                var memberResult = await ApiService.GetMemberListAsync<Result<MemberListResponseModel>>(1, 100);
                 if (memberResult?.IsSuccess == true && memberResult.Data is not null)
                     members = memberResult.Data.Members ?? new();
                 else
                     errorMessage = memberResult?.Message ?? "Failed to load members.";
 
-                var planResult = await ApiService.GetMembershipPlanListAsync<Result<MemberShipPlanListResponseModel>>(1, 1000);
+                var planResult = await ApiService.GetMembershipPlanListAsync<Result<MemberShipPlanListResponseModel>>(1, 100);
                 if (planResult?.IsSuccess == true && planResult.Data is not null)
                     plans = planResult.Data.MemberShipPlans ?? new();
                 else if (string.IsNullOrEmpty(errorMessage))
                     errorMessage = planResult?.Message ?? "Failed to load membership plans.";
 
-                var methodResult = await ApiService.GetPaymentMethodListAsync<Result<PaymentMethodListResponseModel>>(1, 1000);
+                var methodResult = await ApiService.GetPaymentMethodListAsync<Result<PaymentMethodListResponseModel>>(1, 100);
                 if (methodResult?.IsSuccess == true && methodResult.Data is not null)
                     paymentMethods = methodResult.Data.PaymentMethods ?? new();
                 else if (string.IsNullOrEmpty(errorMessage))
