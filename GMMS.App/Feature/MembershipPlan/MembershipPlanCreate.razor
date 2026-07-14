@@ -14,25 +14,33 @@
         }
 
         <MudTextField @bind-Value="request.PlanCode"
+                      @oninput="OnPlanCodeChanged"
                       Label="Plan Code"
                       Variant="Variant.Outlined"
                       Required="true"
                       RequiredError="Plan Code is required."
-                      Class="mb-3" />
+                      MaxLength="50"
+                      Class="mb-3"
+                      HelperText="Uppercase letters, numbers, and hyphens only (max 50 chars)" />
 
         <MudTextField @bind-Value="request.PlanName"
+                      @oninput="OnPlanNameChanged"
                       Label="Plan Name"
                       Variant="Variant.Outlined"
                       Required="true"
                       RequiredError="Plan Name is required."
+                      MaxLength="100"
                       Class="mb-3" />
 
         <MudTextField @bind-Value="request.Description"
+                      @oninput="OnDescriptionChanged"
                       Label="Description"
                       Variant="Variant.Outlined"
                       MultiLine="true"
                       Rows="3"
-                      Class="mb-3" />
+                      MaxLength="500"
+                      Class="mb-3"
+                      HelperText="Max 500 characters" />
 
         <MudNumericField @bind-Value="request.DurationDays"
                          T="int"
@@ -41,7 +49,9 @@
                          Required="true"
                          RequiredError="Duration is required."
                          Min="1"
-                         Class="mb-3" />
+                         Max="3650"
+                         Class="mb-3"
+                         HelperText="1-3650 days (max 10 years)" />
 
         <MudNumericField @bind-Value="request.Price"
                          T="decimal"
@@ -49,7 +59,8 @@
                          Variant="Variant.Outlined"
                          Required="true"
                          RequiredError="Price is required."
-                         Min="0"
+                         Min="0.01m"
+                         Max="1000000"
                          Step="0.01m"
                          Class="mb-3" />
     </DialogContent>

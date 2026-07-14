@@ -1,4 +1,5 @@
-﻿using GMMS.Database.AppDbContextModels;
+﻿using FluentValidation;
+using GMMS.Database.AppDbContextModels;
 using GMMS.Domain.Features.PaymentMethod.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,20 +13,36 @@ namespace GMMS.Domain.Features.PaymentMethod
     public class PaymentMethodService
     {
         private readonly AppDbContext _db;
+        private readonly IValidator<PaymentMethodListRequestModel> _listValidator;
+        private readonly IValidator<PaymentMethodCreateRequestModel> _createValidator;
+        private readonly IValidator<PaymentMethodUpdateRequestModel> _updateValidator;
 
-        public PaymentMethodService(AppDbContext db)
+        public PaymentMethodService(
+            AppDbContext db,
+            IValidator<PaymentMethodListRequestModel> listValidator,
+            IValidator<PaymentMethodCreateRequestModel> createValidator,
+            IValidator<PaymentMethodUpdateRequestModel> updateValidator)
         {
             _db = db;
+            _listValidator = listValidator;
+            _createValidator = createValidator;
+            _updateValidator = updateValidator;
         }
+
         public Result<PaymentMethodListResponseModel> GetList(PaymentMethodListRequestModel request)
         {
+            var validationResult = _listValidator.Validate(request);
+            if (!validationResult.IsValid)
+            {
+                return new Result<PaymentMethodListResponseModel>
+                {
+                    IsSuccess = false,
+                    Message = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage))
+                };
+            }
+
             try
             {
-                if (request.PageNumber <= 0)
-                    request.PageNumber = 1;
-                if (request.PageSize <= 0)
-                    request.PageSize = 10;
-
                 var query = _db.TblPaymentMethods
                     .AsNoTracking()
                     .Where(x => !x.IsDeleted);
@@ -64,10 +81,10 @@ namespace GMMS.Domain.Features.PaymentMethod
                 {
                     IsSuccess = false,
                     Message = ex.Message
-
                 };
             }
         }
+
         public Result<PaymentMethodModel> GetById(int paymentMethodId)
         {
             try
@@ -111,12 +128,23 @@ namespace GMMS.Domain.Features.PaymentMethod
                 };
             }
         }
+
         public Result<PaymentMethodModel> Create(PaymentMethodCreateRequestModel request)
         {
+            var validationResult = _createValidator.Validate(request);
+            if (!validationResult.IsValid)
+            {
+                return new Result<PaymentMethodModel>
+                {
+                    IsSuccess = false,
+                    Message = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage))
+                };
+            }
+
             try
             {
                 var exists = _db.TblPaymentMethods
-                    .Any(x => !x.IsDeleted && x.PaymentMethodCode == request.PaymentMethodCode);
+                    .Any(x => !x.IsDeleted && x.PaymentMethodCode.ToUpper() == request.PaymentMethodCode.ToUpperInvariant());
                 if (exists)
                 {
                     return new Result<PaymentMethodModel>
@@ -127,8 +155,8 @@ namespace GMMS.Domain.Features.PaymentMethod
                 }
                 var paymentMethod = new TblPaymentMethod
                 {
-                    PaymentMethodCode = request.PaymentMethodCode,
-                    Name = request.Name,
+                    PaymentMethodCode = request.PaymentMethodCode.ToUpperInvariant(),
+                    Name = request.Name.Trim(),
                     IsActive = request.IsActive,
                     IsDeleted = false,
                     CreatedAt = DateTime.UtcNow
@@ -159,8 +187,19 @@ namespace GMMS.Domain.Features.PaymentMethod
                 };
             }
         }
-        public Result<PaymentMethodModel> Update(int id ,PaymentMethodUpdateRequestModel request)
+
+        public Result<PaymentMethodModel> Update(int id, PaymentMethodUpdateRequestModel request)
         {
+            var validationResult = _updateValidator.Validate(request);
+            if (!validationResult.IsValid)
+            {
+                return new Result<PaymentMethodModel>
+                {
+                    IsSuccess = false,
+                    Message = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage))
+                };
+            }
+
             try
             {
                 var paymentMethod = _db.TblPaymentMethods
@@ -175,7 +214,7 @@ namespace GMMS.Domain.Features.PaymentMethod
                     };
                 }
                 var exists = _db.TblPaymentMethods
-                    .Any(x => !x.IsDeleted && x.PaymentMethodCode == request.PaymentMethodCode && x.PaymentMethodId != request.PaymentMethodId);
+                    .Any(x => !x.IsDeleted && x.PaymentMethodCode.ToUpper() == request.PaymentMethodCode.ToUpperInvariant() && x.PaymentMethodId != request.PaymentMethodId);
                 if (exists)
                 {
                     return new Result<PaymentMethodModel>
@@ -185,8 +224,8 @@ namespace GMMS.Domain.Features.PaymentMethod
                     };
                 }
 
-                paymentMethod.PaymentMethodCode = request.PaymentMethodCode;
-                paymentMethod.Name = request.Name;
+                paymentMethod.PaymentMethodCode = request.PaymentMethodCode.ToUpperInvariant();
+                paymentMethod.Name = request.Name.Trim();
                 paymentMethod.IsActive = request.IsActive;
                 paymentMethod.UpdatedAt = DateTime.UtcNow;
                 _db.SaveChanges();
@@ -214,6 +253,7 @@ namespace GMMS.Domain.Features.PaymentMethod
                 };
             }
         }
+
         public Result<bool> Delete(int paymentMethodId)
         {
             try

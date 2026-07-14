@@ -122,16 +122,7 @@ namespace GMMS.App.Feature.Payment
             };
         }
 
-        private async Task OpenCreateDialog()
-        {
-            var dialog = await DialogService.ShowAsync<PaymentCreate>("Create Payment");
-            var result = await dialog.Result;
-
-            if (result is not null && !result.Canceled)
-            {
-                await LoadPage(1);
-            }
-        }
+        
 
         private async Task OpenDetailDialog(int paymentId)
         {

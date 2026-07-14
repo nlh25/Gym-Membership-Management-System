@@ -1,4 +1,5 @@
-﻿using GMMS.Database.AppDbContextModels;
+﻿using FluentValidation;
+using GMMS.Database.AppDbContextModels;
 using GMMS.Domain.Features.Payment.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,22 +13,33 @@ namespace GMMS.Domain.Features.Payment
     public class PaymentService
     {
         private readonly AppDbContext _db;
+        private readonly IValidator<PaymentListRequestModel> _listValidator;
+        private readonly IValidator<CreatePaymentRequestModel> _createValidator;
 
-        public PaymentService(AppDbContext db)
+        public PaymentService(
+            AppDbContext db,
+            IValidator<PaymentListRequestModel> listValidator,
+            IValidator<CreatePaymentRequestModel> createValidator)
         {
             _db = db;
+            _listValidator = listValidator;
+            _createValidator = createValidator;
         }
+
         public Result<PaymentListResponseModel> GetList(PaymentListRequestModel request)
         {
+            var validationResult = _listValidator.Validate(request);
+            if (!validationResult.IsValid)
+            {
+                return new Result<PaymentListResponseModel>
+                {
+                    IsSuccess = false,
+                    Message = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage))
+                };
+            }
+
             try
             {
-                if (request.PageNumber <= 0)
-                    request.PageNumber = 1;
-
-                if (request.PageSize <= 0)
-                    request.PageSize = 10;
-
-
                 var query = _db.TblPayments
                     .AsNoTracking();
 
@@ -78,6 +90,7 @@ namespace GMMS.Domain.Features.Payment
                 };
             }
         }
+
         public Result<PaymentDetailModel> GetById(int paymentId)
         {
             try
@@ -119,8 +132,19 @@ namespace GMMS.Domain.Features.Payment
                 };
             }
         }
+
         public Result<PaymentModel> Create(CreatePaymentRequestModel request)
         {
+            var validationResult = _createValidator.Validate(request);
+            if (!validationResult.IsValid)
+            {
+                return new Result<PaymentModel>
+                {
+                    IsSuccess = false,
+                    Message = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage))
+                };
+            }
+
             try
             {
                 var payment = _db.TblPayments
@@ -135,19 +159,28 @@ namespace GMMS.Domain.Features.Payment
                 }
 
                 var PaymentMethod = _db.TblPaymentMethods
-                    .FirstOrDefault(x => x.PaymentMethodId == request.PaymentMethodId);
-                    
-
+                    .FirstOrDefault(x => x.PaymentMethodId == request.PaymentMethodId && !x.IsDeleted && x.IsActive);
+                     
                 if (PaymentMethod == null)
                 {
                     return new Result<PaymentModel>
                     {
                         IsSuccess = false,
-                        Message = "Payment method not found."
+                        Message = "Payment method not found or inactive."
                     };
                 }
                 
-                
+                var membership = _db.TblMemberships
+                    .FirstOrDefault(x => x.MembershipId == request.MembershipId && !x.IsDeleted);
+                if (membership == null)
+                {
+                    return new Result<PaymentModel>
+                    {
+                        IsSuccess = false,
+                        Message = "Membership not found."
+                    };
+                }
+
 
                 var newPayment = new TblPayment
                 {

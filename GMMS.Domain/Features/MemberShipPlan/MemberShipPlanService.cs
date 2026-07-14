@@ -1,5 +1,5 @@
-﻿using GMMS.Database.AppDbContextModels;
-using GMMS.Domain.Features.Member.Models;
+﻿using FluentValidation;
+using GMMS.Database.AppDbContextModels;
 using GMMS.Domain.Features.MemberShipPlan.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,21 +13,36 @@ namespace GMMS.Domain.Features.MemberShipPlan
     public class MemberShipPlanService
     {
         private readonly AppDbContext _db;
+        private readonly IValidator<MemberShipPlanlistRequestModel> _listValidator;
+        private readonly IValidator<CreateMemberShipPlanRequestModel> _createValidator;
+        private readonly IValidator<UpdateMemberShipPlanRequestModel> _updateValidator;
 
-        public MemberShipPlanService(AppDbContext db)
+        public MemberShipPlanService(
+            AppDbContext db,
+            IValidator<MemberShipPlanlistRequestModel> listValidator,
+            IValidator<CreateMemberShipPlanRequestModel> createValidator,
+            IValidator<UpdateMemberShipPlanRequestModel> updateValidator)
         {
             _db = db;
+            _listValidator = listValidator;
+            _createValidator = createValidator;
+            _updateValidator = updateValidator;
         }
+
         public Result<MemberShipPlanListResponseModel> GetList(MemberShipPlanlistRequestModel request)
         {
+            var validationResult = _listValidator.Validate(request);
+            if (!validationResult.IsValid)
+            {
+                return new Result<MemberShipPlanListResponseModel>
+                {
+                    IsSuccess = false,
+                    Message = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage))
+                };
+            }
+
             try
             {
-                if (request.PageNumber <= 0)
-                    request.PageNumber = 1;
-
-                if (request.PageSize <= 0)
-                    request.PageSize = 10;
-
                 var query = _db.TblMembershipPlans
                     .AsNoTracking()
                     .Where(x => !x.IsDeleted);
@@ -71,6 +86,7 @@ namespace GMMS.Domain.Features.MemberShipPlan
                 };
             }
         }
+
         public Result<MembershipPlanDetailModel> GetById(int membershipPlanId)
         {
             try
@@ -114,12 +130,23 @@ namespace GMMS.Domain.Features.MemberShipPlan
                 };
             }
         }
+
         public Result<MembershipPlanDetailModel> Create(CreateMemberShipPlanRequestModel request)
         {
+            var validationResult = _createValidator.Validate(request);
+            if (!validationResult.IsValid)
+            {
+                return new Result<MembershipPlanDetailModel>
+                {
+                    IsSuccess = false,
+                    Message = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage))
+                };
+            }
+
             try
             {
                 var exists = _db.TblMembershipPlans
-                    .Any(x => !x.IsDeleted && x.PlanCode == request.PlanCode);
+                    .Any(x => !x.IsDeleted && x.PlanCode.ToUpper() == request.PlanCode.ToUpperInvariant());
 
                 if (exists)
                 {
@@ -132,11 +159,11 @@ namespace GMMS.Domain.Features.MemberShipPlan
 
                 var plan = new TblMembershipPlan
                 {
-                    PlanCode = request.PlanCode,
-                    PlanName = request.PlanName,
+                    PlanCode = request.PlanCode.ToUpperInvariant(),
+                    PlanName = request.PlanName.Trim(),
                     Price = request.Price,
                     DurationDays = request.DurationDays,
-                    Description = request.Description,
+                    Description = request.Description?.Trim(),
                     IsActive = true,
                     IsDeleted = false,
                     CreatedAt = DateTime.UtcNow
@@ -170,8 +197,19 @@ namespace GMMS.Domain.Features.MemberShipPlan
                 };
             }
         }
+
         public Result<MembershipPlanDetailModel> Update(int id, UpdateMemberShipPlanRequestModel request)
         {
+            var validationResult = _updateValidator.Validate(request);
+            if (!validationResult.IsValid)
+            {
+                return new Result<MembershipPlanDetailModel>
+                {
+                    IsSuccess = false,
+                    Message = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage))
+                };
+            }
+
             try
             {
                 var plan = _db.TblMembershipPlans
@@ -187,7 +225,7 @@ namespace GMMS.Domain.Features.MemberShipPlan
                 }
 
                 var existsplan = _db.TblMembershipPlans
-                    .Any(x => !x.IsDeleted && x.PlanCode == request.PlanCode && x.MembershipPlanId != request.MemberShipPlanId);
+                    .Any(x => !x.IsDeleted && x.PlanCode.ToUpper() == request.PlanCode.ToUpperInvariant() && x.MembershipPlanId != request.MemberShipPlanId);
                 if (existsplan)
                 {
                     return new Result<MembershipPlanDetailModel>
@@ -197,11 +235,11 @@ namespace GMMS.Domain.Features.MemberShipPlan
                     };
                 }
 
-                plan.PlanCode = request.PlanCode;
-                plan.PlanName = request.PlanName;
+                plan.PlanCode = request.PlanCode.ToUpperInvariant();
+                plan.PlanName = request.PlanName.Trim();
                 plan.Price = request.Price;
                 plan.DurationDays = request.DurationDays;
-                plan.Description = request.Description;
+                plan.Description = request.Description?.Trim();
                 plan.UpdatedAt = DateTime.UtcNow;
                 _db.SaveChanges();
                 return new Result<MembershipPlanDetailModel>
@@ -229,8 +267,8 @@ namespace GMMS.Domain.Features.MemberShipPlan
                     Message = ex.Message
                 };
             }
-
         }
+
         public Result<bool> Delete(int membershipPlanId)
         {
             try

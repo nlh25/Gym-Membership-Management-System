@@ -22,18 +22,24 @@
         else
         {
             <MudTextField @bind-Value="request.PaymentMethodCode"
-                          Label="Payment Method Code"
+                          @oninput="OnCodeChanged"
+                          Label="Code"
                           Variant="Variant.Outlined"
                           Required="true"
-                          RequiredError="Payment Method Code is required."
-                          Class="mb-3" />
+                          RequiredError="Code is required."
+                          MaxLength="50"
+                          Class="mb-3"
+                          HelperText="Uppercase letters, numbers, and hyphens only (max 50 chars)" />
 
             <MudTextField @bind-Value="request.Name"
+                          @oninput="OnNameChanged"
                           Label="Name"
                           Variant="Variant.Outlined"
                           Required="true"
                           RequiredError="Name is required."
-                          Class="mb-3" />
+                          MaxLength="100"
+                          Class="mb-3"
+                          HelperText="Max 100 characters" />
 
             <MudSwitch @bind-Checked="request.IsActive" T="bool" Label="Active" Color="Color.Primary" Class="mb-3" />
         }
