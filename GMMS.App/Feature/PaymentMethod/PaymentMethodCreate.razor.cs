@@ -14,9 +14,19 @@ namespace GMMS.App.Feature.PaymentMethod
         [Inject]
         private ApiService ApiService { get; set; } = null!;
 
+        [Inject]
+        private ISnackbar Snackbar { get; set; } = null!;
+
         private PaymentMethodCreateRequestModel request = new();
         private bool isSaving;
         private string? errorMessage;
+
+       
+
+        private void OnCodeChanged(string value)
+        {
+            request.PaymentMethodCode = value?.ToUpperInvariant() ?? "";
+        }
 
         private void Cancel()
         {
@@ -34,6 +44,7 @@ namespace GMMS.App.Feature.PaymentMethod
 
                 if (result?.IsSuccess == true)
                 {
+                    Snackbar.Add("Payment method created successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else

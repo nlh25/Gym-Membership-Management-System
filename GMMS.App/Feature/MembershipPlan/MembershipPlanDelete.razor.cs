@@ -17,7 +17,10 @@ namespace GMMS.App.Feature.MembershipPlan
         [Inject]
         private ApiService ApiService { get; set; } = null!;
 
-        private MembershipPlanDetailModel? plan;
+        [Inject]
+        private ISnackbar Snackbar { get; set; } = null!;
+
+        private MemberShipPlanModel? plan;
         private bool isLoading = true;
         private bool isDeleting;
         private string? errorMessage;
@@ -29,7 +32,18 @@ namespace GMMS.App.Feature.MembershipPlan
                 var result = await ApiService.GetMembershipPlanDetailsAsync<Result<MembershipPlanDetailModel>>(PlanId);
                 if (result?.IsSuccess == true && result.Data is not null)
                 {
-                    plan = result.Data;
+                    plan = new MemberShipPlanModel
+                    {
+                        MemberShipPlanId = result.Data.MemberShipPlanId,
+                        PlanCode = result.Data.PlanCode,
+                        PlanName = result.Data.PlanName,
+                        Price = result.Data.Price,
+                        DurationDays = result.Data.DurationDays,
+                        Description = result.Data.Description,
+                        IsActive = true, // default for display
+                        CreatedAt = result.Data.CreatedAt,
+                        UpdatedAt = result.Data.UpdatedAt
+                    };
                 }
                 else
                 {
@@ -62,6 +76,7 @@ namespace GMMS.App.Feature.MembershipPlan
                 var result = await ApiService.DeleteMembershipPlanAsync<Result<bool>>(PlanId);
                 if (result?.IsSuccess == true)
                 {
+                    Snackbar.Add("Membership plan deleted successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else

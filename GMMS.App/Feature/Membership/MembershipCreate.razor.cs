@@ -20,6 +20,9 @@ namespace GMMS.App.Feature.Membership
         [Inject]
         private ApiService ApiService { get; set; } = null!;
 
+        [Inject]
+        private ISnackbar Snackbar { get; set; } = null!;
+
         private CreateMemberShipRequestModel request = new();
         private List<MemberModel> members = new();
         private List<MemberShipPlanModel> plans = new();
@@ -60,13 +63,13 @@ namespace GMMS.App.Feature.Membership
 
                 var planResult = await ApiService.GetMembershipPlanListAsync<Result<MemberShipPlanListResponseModel>>(1, 100);
                 if (planResult?.IsSuccess == true && planResult.Data is not null)
-                    plans = planResult.Data.MemberShipPlans ?? new();
+                    plans = (planResult.Data.MemberShipPlans ?? new()).Where(p => p.IsActive).ToList();
                 else if (string.IsNullOrEmpty(errorMessage))
                     errorMessage = planResult?.Message ?? "Failed to load membership plans.";
 
                 var methodResult = await ApiService.GetPaymentMethodListAsync<Result<PaymentMethodListResponseModel>>(1, 100);
                 if (methodResult?.IsSuccess == true && methodResult.Data is not null)
-                    paymentMethods = methodResult.Data.PaymentMethods ?? new();
+                    paymentMethods = (methodResult.Data.PaymentMethods ?? new()).Where(p => p.IsActive).ToList();
                 else if (string.IsNullOrEmpty(errorMessage))
                     errorMessage = methodResult?.Message ?? "Failed to load payment methods.";
 
@@ -99,25 +102,17 @@ namespace GMMS.App.Feature.Membership
         {
             if (request.MemberId <= 0)
             {
-                errorMessage = "Member is required.";
+                errorMessage = "Please select a member.";
                 return;
             }
-
             if (request.MembershipPlanId <= 0)
             {
-                errorMessage = "Membership plan is required.";
+                errorMessage = "Please select a membership plan.";
                 return;
             }
-
             if (request.PaymentMethodId <= 0)
             {
-                errorMessage = "Payment method is required.";
-                return;
-            }
-
-            if (request.Amount <= 0)
-            {
-                errorMessage = "Amount must be greater than 0.";
+                errorMessage = "Please select a payment method.";
                 return;
             }
 
@@ -130,6 +125,7 @@ namespace GMMS.App.Feature.Membership
 
                 if (result?.IsSuccess == true)
                 {
+                    Snackbar.Add("Membership created successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else

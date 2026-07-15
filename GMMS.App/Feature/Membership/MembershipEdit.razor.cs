@@ -21,6 +21,9 @@ namespace GMMS.App.Feature.Membership
         [Inject]
         private ApiService ApiService { get; set; } = null!;
 
+        [Inject]
+        private ISnackbar Snackbar { get; set; } = null!;
+
         private UpdateMembershipRequestModel request = new();
         private MembershipDetailModel? detail;
         private List<MemberShipPlanModel> plans = new();
@@ -112,6 +115,7 @@ namespace GMMS.App.Feature.Membership
                 var result = await ApiService.UpdateMembershipAsync<UpdateMembershipRequestModel, Result<MembershipDetailModel>>(MembershipId, request);
                 if (result?.IsSuccess == true)
                 {
+                    Snackbar.Add("Membership updated successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else

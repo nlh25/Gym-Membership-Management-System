@@ -17,6 +17,9 @@ namespace GMMS.App.Feature.PaymentMethod
         [Inject]
         private ApiService ApiService { get; set; } = null!;
 
+        [Inject]
+        private ISnackbar Snackbar { get; set; } = null!;
+
         private PaymentMethodUpdateRequestModel request = new();
         private bool isLoading = true;
         private bool isSaving;
@@ -49,6 +52,11 @@ namespace GMMS.App.Feature.PaymentMethod
             }
         }
 
+        private void OnCodeChanged(string value)
+        {
+            request.PaymentMethodCode = value?.ToUpperInvariant() ?? "";
+        }
+
         private void Cancel()
         {
             MudDialog.Cancel();
@@ -64,6 +72,7 @@ namespace GMMS.App.Feature.PaymentMethod
                 var result = await ApiService.UpdatePaymentMethodAsync<PaymentMethodUpdateRequestModel, Result<PaymentMethodModel>>(PaymentMethodId, request);
                 if (result?.IsSuccess == true)
                 {
+                    Snackbar.Add("Payment method updated successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else

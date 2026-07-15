@@ -102,6 +102,7 @@ namespace GMMS.Domain.Features.MemberShipPlan
                         Price = x.Price,
                         DurationDays = x.DurationDays,
                         Description = x.Description,
+                        IsActive = x.IsActive,
                         CreatedAt = x.CreatedAt,
                         UpdatedAt = x.UpdatedAt
                     })
@@ -164,7 +165,7 @@ namespace GMMS.Domain.Features.MemberShipPlan
                     Price = request.Price,
                     DurationDays = request.DurationDays,
                     Description = request.Description?.Trim(),
-                    IsActive = true,
+                    IsActive = request.IsActive,
                     IsDeleted = false,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -240,6 +241,7 @@ namespace GMMS.Domain.Features.MemberShipPlan
                 plan.Price = request.Price;
                 plan.DurationDays = request.DurationDays;
                 plan.Description = request.Description?.Trim();
+                plan.IsActive = request.IsActive;
                 plan.UpdatedAt = DateTime.UtcNow;
                 _db.SaveChanges();
                 return new Result<MembershipPlanDetailModel>
@@ -254,6 +256,7 @@ namespace GMMS.Domain.Features.MemberShipPlan
                         Price = plan.Price,
                         DurationDays = plan.DurationDays,
                         Description = plan.Description,
+                        IsActive = plan.IsActive,
                         CreatedAt = plan.CreatedAt,
                         UpdatedAt = plan.UpdatedAt
                     }

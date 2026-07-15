@@ -22,6 +22,7 @@
         else
         {
             <MudTextField @bind-Value="request.PaymentMethodCode"
+                          @oninput="OnCodeChanged"
                           Label="Code"
                           Variant="Variant.Outlined"
                           Required="true"
@@ -39,7 +40,10 @@
                           Class="mb-3"
                           HelperText="Max 100 characters" />
 
-            <MudSwitch @bind-Checked="request.IsActive" T="bool" Label="Active" Color="Color.Primary" Class="mb-3" />
+            <MudCheckBox T="bool"
+                         @bind-Value="request.IsActive"
+                         Label="Active"
+                         Color="Color.Primary" />
         }
     </DialogContent>
 

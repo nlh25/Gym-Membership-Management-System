@@ -14,6 +14,9 @@ namespace GMMS.App.Feature.Member
         [Inject]
         private ApiService ApiService { get; set; } = null!;
 
+        [Inject]
+        private ISnackbar Snackbar { get; set; } = null!;
+
         private CreateMemberRequestModel request = new();
         private bool isLoading;
         private string? errorMessage;
@@ -51,6 +54,7 @@ namespace GMMS.App.Feature.Member
 
                 if (result?.IsSuccess == true)
                 {
+                    Snackbar.Add("Member created successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else

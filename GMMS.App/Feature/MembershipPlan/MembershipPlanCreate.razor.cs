@@ -14,6 +14,9 @@ namespace GMMS.App.Feature.MembershipPlan
         [Inject]
         private ApiService ApiService { get; set; } = null!;
 
+        [Inject]
+        private ISnackbar Snackbar { get; set; } = null!;
+
         private CreateMemberShipPlanRequestModel request = new();
         private bool isSaving;
         private string? errorMessage;
@@ -34,6 +37,7 @@ namespace GMMS.App.Feature.MembershipPlan
 
                 if (result?.IsSuccess == true)
                 {
+                    Snackbar.Add("Membership plan created successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else

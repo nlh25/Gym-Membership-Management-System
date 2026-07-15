@@ -146,6 +146,12 @@ namespace GMMS.App.Feature.MembershipPlan
             }
         }
 
+        private async Task OpenDetailDialog(int planId)
+        {
+            var parameters = new DialogParameters<MembershipPlanDetail> { { x => x.PlanId, planId } };
+            await DialogService.ShowAsync<MembershipPlanDetail>("Plan Details", parameters);
+        }
+
         public void Dispose()
         {
             _searchCts?.Cancel();

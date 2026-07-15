@@ -17,6 +17,9 @@ namespace GMMS.App.Feature.PaymentMethod
         [Inject]
         private ApiService ApiService { get; set; } = null!;
 
+        [Inject]
+        private ISnackbar Snackbar { get; set; } = null!;
+
         private PaymentMethodModel? method;
         private bool isLoading = true;
         private bool isDeleting;
@@ -62,6 +65,7 @@ namespace GMMS.App.Feature.PaymentMethod
                 var result = await ApiService.DeletePaymentMethodAsync<Result<bool>>(PaymentMethodId);
                 if (result?.IsSuccess == true)
                 {
+                    Snackbar.Add("Payment method deleted successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else

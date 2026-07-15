@@ -17,6 +17,9 @@ namespace GMMS.App.Feature.Member
         [Inject]
         private ApiService ApiService { get; set; } = null!;
 
+        [Inject]
+        private ISnackbar Snackbar { get; set; } = null!;
+
         private UpdateMemberRequestModel request = new();
         private bool isLoading = true;
         private bool isSaving;
@@ -80,6 +83,7 @@ namespace GMMS.App.Feature.Member
                 var result = await ApiService.UpdateMemberAsync<UpdateMemberRequestModel, Result<MemberModel>>(MemberId, request);
                 if (result?.IsSuccess == true)
                 {
+                    Snackbar.Add("Member updated successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else

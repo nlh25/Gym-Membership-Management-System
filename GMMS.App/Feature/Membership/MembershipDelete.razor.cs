@@ -20,6 +20,9 @@ namespace GMMS.App.Feature.Membership
         [Inject]
         private ApiService ApiService { get; set; } = null!;
 
+        [Inject]
+        private ISnackbar Snackbar { get; set; } = null!;
+
         private MemberShipModel? membership;
         private bool isLoading = true;
         private bool isDeleting;
@@ -77,6 +80,7 @@ namespace GMMS.App.Feature.Membership
                 var result = await ApiService.DeleteMembershipAsync<Result<bool>>(MembershipId);
                 if (result?.IsSuccess == true)
                 {
+                    Snackbar.Add("Membership deleted successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else

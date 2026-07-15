@@ -17,6 +17,9 @@ namespace GMMS.App.Feature.MembershipPlan
         [Inject]
         private ApiService ApiService { get; set; } = null!;
 
+        [Inject]
+        private ISnackbar Snackbar { get; set; } = null!;
+
         private UpdateMemberShipPlanRequestModel request = new();
         private bool isLoading = true;
         private bool isSaving;
@@ -33,6 +36,7 @@ namespace GMMS.App.Feature.MembershipPlan
                     request.PlanCode = result.Data.PlanCode;
                     request.PlanName = result.Data.PlanName;
                     request.Price = result.Data.Price;
+                    request.IsActive = result.Data.IsActive;
                     request.DurationDays = result.Data.DurationDays;
                     request.Description = result.Data.Description;
                 }
@@ -66,6 +70,7 @@ namespace GMMS.App.Feature.MembershipPlan
                 var result = await ApiService.UpdateMembershipPlanAsync<UpdateMemberShipPlanRequestModel, Result<MemberShipPlanModel>>(PlanId, request);
                 if (result?.IsSuccess == true)
                 {
+                    Snackbar.Add("Membership plan updated successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else
