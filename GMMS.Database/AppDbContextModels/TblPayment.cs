@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace GMMS.Database.AppDbContextModels;
 
-public partial class TblPayment
+public partial class TblPayment : BaseEntity
 {
     public int PaymentId { get; set; }
 
@@ -16,8 +16,6 @@ public partial class TblPayment
     public string? Sspath { get; set; }
 
     public string Status { get; set; } = null!;
-
-    public DateTime CreatedAt { get; set; }
 
     public virtual TblMembership Membership { get; set; } = null!;
 

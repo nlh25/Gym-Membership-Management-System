@@ -132,7 +132,7 @@ namespace GMMS.App.Feature.Membership
                 {
                     errorMessage = result?.Message ?? "Failed to create membership.";
                 }
-            }
+            } 
             catch (Exception ex)
             {
                 errorMessage = ex.Message;

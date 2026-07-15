@@ -21,6 +21,12 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<TblPaymentMethod> TblPaymentMethods { get; set; }
 
+    public virtual DbSet<TblUser> TblUsers { get; set; }
+
+    public virtual DbSet<TblUserSession> TblUserSessions { get; set; }
+
+    public virtual DbSet<TblAuditLog> TblAuditLogs { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<TblMember>(entity =>
@@ -31,9 +37,12 @@ public partial class AppDbContext : DbContext
 
             entity.HasIndex(e => e.MemberCode, "UQ__Tbl_Memb__84CA637700FA42E5").IsUnique();
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.MemberCode).HasMaxLength(50);
             entity.Property(e => e.Name).HasMaxLength(100);
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.CreatedBy).HasDefaultValueSql("((1))");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
         });
 
         modelBuilder.Entity<TblMembership>(entity =>
@@ -42,8 +51,11 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("Tbl_Membership");
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Status).HasMaxLength(20);
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.CreatedBy).HasDefaultValueSql("((1))");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
 
             entity.HasOne(d => d.Member).WithMany(p => p.TblMemberships)
                 .HasForeignKey(d => d.MemberId)
@@ -62,11 +74,15 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("Tbl_MembershipPlan");
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.PlanName).HasMaxLength(100);
             entity.Property(e => e.Price).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.PlanCode).HasMaxLength(50);
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.CreatedBy).HasDefaultValueSql("((1))");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
         });
 
         modelBuilder.Entity<TblPayment>(entity =>
@@ -76,11 +92,14 @@ public partial class AppDbContext : DbContext
             entity.ToTable("Tbl_Payment");
 
             entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Sspath)
                 .HasMaxLength(500)
                 .HasColumnName("SSPath");
             entity.Property(e => e.Status).HasMaxLength(20);
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.CreatedBy).HasDefaultValueSql("((1))");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
 
             entity.HasOne(d => d.Membership).WithMany(p => p.TblPayments)
                 .HasForeignKey(d => d.MembershipId)
@@ -99,9 +118,64 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("Tbl_PaymentMethod");
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.Name).HasMaxLength(100);
+            entity.Property(e => e.PaymentMethodCode).HasMaxLength(50);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.CreatedBy).HasDefaultValueSql("((1))");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+        });
+
+        // TblUser
+        modelBuilder.Entity<TblUser>(entity =>
+        {
+            entity.HasKey(e => e.UserId).HasName("PK_TblUser");
+
+            entity.ToTable("Tbl_User");
+
+            entity.HasIndex(e => e.UserName, "UQ_TblUser_UserName").IsUnique();
+
+            entity.Property(e => e.UserName).HasMaxLength(100);
+            entity.Property(e => e.PasswordHash).HasMaxLength(256);
+            entity.Property(e => e.Role).HasMaxLength(50);
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.CreatedBy).HasDefaultValueSql("((1))");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+        });
+
+        // TblUserSession
+        modelBuilder.Entity<TblUserSession>(entity =>
+        {
+            entity.HasKey(e => e.UserSessionId).HasName("PK_TblUserSession");
+
+            entity.ToTable("Tbl_UserSession");
+
+            entity.Property(e => e.SessionId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.LoginTime).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.Sessions)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // TblAuditLog
+        modelBuilder.Entity<TblAuditLog>(entity =>
+        {
+            entity.HasKey(e => e.AuditId).HasName("PK_TblAuditLog");
+
+            entity.ToTable("Tbl_AuditLog");
+
+            entity.Property(e => e.TableName).HasMaxLength(100);
+            entity.Property(e => e.RecordId).HasMaxLength(50);
+            entity.Property(e => e.Action).HasMaxLength(50);
+            entity.Property(e => e.OldValue).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.NewValue).HasColumnType("nvarchar(max)");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
         });
 
         OnModelCreatingPartial(modelBuilder);

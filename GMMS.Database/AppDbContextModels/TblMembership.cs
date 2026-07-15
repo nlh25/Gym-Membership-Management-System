@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace GMMS.Database.AppDbContextModels;
 
-public partial class TblMembership
+public partial class TblMembership : BaseEntity
 {
     public int MembershipId { get; set; }
 
@@ -16,12 +16,6 @@ public partial class TblMembership
     public DateOnly EndDate { get; set; }
 
     public string Status { get; set; } = null!;
-
-    public bool IsDeleted { get; set; }
-
-    public DateTime CreatedAt { get; set; }
-
-    public DateTime? UpdatedAt { get; set; }
 
     public virtual TblMember Member { get; set; } = null!;
 
