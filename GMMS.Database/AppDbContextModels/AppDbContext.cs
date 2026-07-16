@@ -144,6 +144,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.CreatedBy).HasDefaultValueSql("((1))");
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.MustChangePassword).HasDefaultValue(true);
         });
 
         // TblUserSession
@@ -179,6 +180,33 @@ public partial class AppDbContext : DbContext
         });
 
         OnModelCreatingPartial(modelBuilder);
+
+        modelBuilder.Entity<TblUser>().HasData(
+            new TblUser
+            {
+                UserId = 1,
+                UserName = "owner",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Owner@123"),
+                Role = "Owner",
+                IsActive = true,
+                MustChangePassword = true,
+                IsDeleted = false,
+                CreatedBy = 1,
+                CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            },
+            new TblUser
+            {
+                UserId = 2,
+                UserName = "admin",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
+                Role = "Admin",
+                IsActive = true,
+                MustChangePassword = true,
+                IsDeleted = false,
+                CreatedBy = 1,
+                CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            }
+        );
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);

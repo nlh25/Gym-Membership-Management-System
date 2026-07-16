@@ -24,7 +24,9 @@ public class PaymentMethodListRequestModel
         public string Name { get; set; } = null!;
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? CreatedByUser { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public string? UpdatedByUser { get; set; }
     }
     public class PaymentMethodCreateRequestModel
     {

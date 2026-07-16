@@ -71,7 +71,11 @@ namespace GMMS.Domain.Features.Member
                         MemberCode = x.MemberCode,
                         Name = x.Name,
                         CreatedAt = x.CreatedAt,
-                        UpdatedAt = x.UpdatedAt
+                        CreatedByUser = x.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == x.CreatedBy).Select(u => u.UserName).FirstOrDefault(),
+                        UpdatedAt = x.UpdatedAt,
+                        UpdatedByUser = x.UpdatedBy.HasValue
+                            ? x.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == x.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
+                            : null
                     })
                     .ToList();
 
@@ -108,7 +112,11 @@ namespace GMMS.Domain.Features.Member
                         MemberCode = x.MemberCode,
                         Name = x.Name,
                         CreatedAt = x.CreatedAt,
-                        UpdatedAt = x.UpdatedAt
+                        CreatedByUser = x.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == x.CreatedBy).Select(u => u.UserName).FirstOrDefault(),
+                        UpdatedAt = x.UpdatedAt,
+                        UpdatedByUser = x.UpdatedBy.HasValue
+                            ? x.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == x.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
+                            : null
                     })
                     .FirstOrDefault();
 
@@ -256,7 +264,11 @@ namespace GMMS.Domain.Features.Member
                         MemberCode = member.MemberCode,
                         Name = member.Name,
                         CreatedAt = member.CreatedAt,
-                        UpdatedAt = member.UpdatedAt
+                        CreatedByUser = member.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == member.CreatedBy).Select(u => u.UserName).FirstOrDefault(),
+                        UpdatedAt = member.UpdatedAt,
+                        UpdatedByUser = member.UpdatedBy.HasValue
+                            ? member.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == member.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
+                            : null
                     }
                 };
             }

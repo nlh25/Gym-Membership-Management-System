@@ -23,7 +23,9 @@ public class MemberModel
     public string MemberCode { get; set; } = null!;
     public string Name { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
+    public string? CreatedByUser { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    public string? UpdatedByUser { get; set; }
 }
 
 public class CreateMemberRequestModel

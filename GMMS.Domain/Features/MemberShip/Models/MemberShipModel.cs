@@ -36,6 +36,8 @@ namespace GMMS.Domain.Features.MemberShip.Models
         public DateOnly StartDate { get; set; }
         public DateOnly EndDate { get; set; }
         public string Status { get; set; } = null!;
+        public string? CreatedByUser { get; set; }
+        public string? UpdatedByUser { get; set; }
     }
     public class MembershipDetailModel
     {
@@ -55,7 +57,9 @@ namespace GMMS.Domain.Features.MemberShip.Models
         public string Status { get; set; } = null!;
 
         public DateTime CreatedAt { get; set; }
+        public string? CreatedByUser { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public string? UpdatedByUser { get; set; }
 
     }
     public class CreateMemberShipRequestModel

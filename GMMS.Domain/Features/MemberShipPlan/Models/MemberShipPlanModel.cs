@@ -26,7 +26,9 @@ namespace GMMS.Domain.Features.MemberShipPlan.Models
         public string? Description { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? CreatedByUser { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public string? UpdatedByUser { get; set; }
     }
     public class MembershipPlanDetailModel
     {
@@ -38,7 +40,9 @@ namespace GMMS.Domain.Features.MemberShipPlan.Models
         public string? Description { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? CreatedByUser { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public string? UpdatedByUser { get; set; }
     }
 
 

@@ -65,7 +65,8 @@ namespace GMMS.Domain.Features.Payment
 
                         Status = x.Status,
 
-                        CreatedAt = x.CreatedAt
+                        CreatedAt = x.CreatedAt,
+                        CreatedByUser = x.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == x.CreatedBy).Select(u => u.UserName).FirstOrDefault()
                     })
                     .ToList();
 
@@ -102,10 +103,12 @@ namespace GMMS.Domain.Features.Payment
                     {
                         PaymentId = x.PaymentId,
                         MemberName = x.Membership.Member.Name,
+                        MembershipName = x.Membership.MembershipPlan.PlanName,
                         PaymentMethodName = x.PaymentMethod.Name,
                         Amount = x.Amount,
                         Status = x.Status,
-                        CreatedAt = x.CreatedAt
+                        CreatedAt = x.CreatedAt,
+                        CreatedByUser = x.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == x.CreatedBy).Select(u => u.UserName).FirstOrDefault()
                     })
                     .FirstOrDefault();
                 if (payment == null)

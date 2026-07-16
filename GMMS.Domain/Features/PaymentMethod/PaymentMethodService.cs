@@ -60,7 +60,11 @@ namespace GMMS.Domain.Features.PaymentMethod
                         Name = x.Name,
                         IsActive = x.IsActive,
                         CreatedAt = x.CreatedAt,
-                        UpdatedAt = x.UpdatedAt
+                        CreatedByUser = x.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == x.CreatedBy).Select(u => u.UserName).FirstOrDefault(),
+                        UpdatedAt = x.UpdatedAt,
+                        UpdatedByUser = x.UpdatedBy.HasValue
+                            ? x.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == x.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
+                            : null
                     })
                     .ToList();
 
@@ -99,7 +103,11 @@ namespace GMMS.Domain.Features.PaymentMethod
                         Name = x.Name,
                         IsActive = x.IsActive,
                         CreatedAt = x.CreatedAt,
-                        UpdatedAt = x.UpdatedAt
+                        CreatedByUser = x.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == x.CreatedBy).Select(u => u.UserName).FirstOrDefault(),
+                        UpdatedAt = x.UpdatedAt,
+                        UpdatedByUser = x.UpdatedBy.HasValue
+                            ? x.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == x.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
+                            : null
                     })
                     .FirstOrDefault();
 
@@ -174,7 +182,7 @@ namespace GMMS.Domain.Features.PaymentMethod
                         Name = paymentMethod.Name,
                         IsActive = paymentMethod.IsActive,
                         CreatedAt = paymentMethod.CreatedAt,
-                        UpdatedAt = paymentMethod.UpdatedAt
+                        CreatedByUser = paymentMethod.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == paymentMethod.CreatedBy).Select(u => u.UserName).FirstOrDefault()
                     }
                 };
             }
@@ -240,7 +248,11 @@ namespace GMMS.Domain.Features.PaymentMethod
                         Name = paymentMethod.Name,
                         IsActive = paymentMethod.IsActive,
                         CreatedAt = paymentMethod.CreatedAt,
-                        UpdatedAt = paymentMethod.UpdatedAt
+                        CreatedByUser = paymentMethod.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == paymentMethod.CreatedBy).Select(u => u.UserName).FirstOrDefault(),
+                        UpdatedAt = paymentMethod.UpdatedAt,
+                        UpdatedByUser = paymentMethod.UpdatedBy.HasValue
+                            ? paymentMethod.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == paymentMethod.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
+                            : null
                     }
                 };
             }

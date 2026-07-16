@@ -66,7 +66,11 @@ namespace GMMS.Domain.Features.MemberShip
                         PlanName = x.MembershipPlan.PlanName,
                         StartDate = x.StartDate,
                         EndDate = x.EndDate,
-                        Status = x.Status
+                        Status = x.Status,
+                        CreatedByUser = x.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == x.CreatedBy).Select(u => u.UserName).FirstOrDefault(),
+                        UpdatedByUser = x.UpdatedBy.HasValue
+                            ? x.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == x.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
+                            : null
                     })
                     .ToList();
 
@@ -137,7 +141,11 @@ namespace GMMS.Domain.Features.MemberShip
                         PlanName = x.MembershipPlan.PlanName,
                         StartDate = x.StartDate,
                         EndDate = x.EndDate,
-                        Status = x.Status
+                        Status = x.Status,
+                        CreatedByUser = x.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == x.CreatedBy).Select(u => u.UserName).FirstOrDefault(),
+                        UpdatedByUser = x.UpdatedBy.HasValue
+                            ? x.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == x.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
+                            : null
                     })
                     .ToList();
 
@@ -182,7 +190,11 @@ namespace GMMS.Domain.Features.MemberShip
                         EndDate = x.EndDate,
                         Status = x.Status,
                         CreatedAt = x.CreatedAt,
-                        UpdatedAt = x.UpdatedAt
+                        CreatedByUser = x.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == x.CreatedBy).Select(u => u.UserName).FirstOrDefault(),
+                        UpdatedAt = x.UpdatedAt,
+                        UpdatedByUser = x.UpdatedBy.HasValue
+                            ? x.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == x.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
+                            : null
                     })
                     .FirstOrDefault();
 
@@ -324,7 +336,8 @@ namespace GMMS.Domain.Features.MemberShip
                         StartDate = newMembership.StartDate,
                         EndDate = newMembership.EndDate,
                         Status = newMembership.Status,
-                        CreatedAt = newMembership.CreatedAt
+                        CreatedAt = newMembership.CreatedAt,
+                        CreatedByUser = newMembership.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == newMembership.CreatedBy).Select(u => u.UserName).FirstOrDefault()
                     }
                 };
             }
@@ -418,7 +431,11 @@ namespace GMMS.Domain.Features.MemberShip
                         EndDate = membership.EndDate,
                         Status = membership.Status,
                         CreatedAt = membership.CreatedAt,
-                        UpdatedAt = membership.UpdatedAt
+                        CreatedByUser = membership.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == membership.CreatedBy).Select(u => u.UserName).FirstOrDefault(),
+                        UpdatedAt = membership.UpdatedAt,
+                        UpdatedByUser = membership.UpdatedBy.HasValue
+                            ? membership.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == membership.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
+                            : null
                     }
                 };
             }

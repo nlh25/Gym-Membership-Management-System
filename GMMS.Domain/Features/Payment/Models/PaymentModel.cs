@@ -29,6 +29,7 @@ namespace GMMS.Domain.Features.Payment.Models
         public string Status { get; set; } = null!;
 
         public DateTime CreatedAt { get; set; }
+        public string? CreatedByUser { get; set; }
     }
     public class PaymentDetailModel
     {
@@ -45,6 +46,7 @@ namespace GMMS.Domain.Features.Payment.Models
         public string Status { get; set; } = null!;
 
         public DateTime CreatedAt { get; set; }
+        public string? CreatedByUser { get; set; }
     }
     public class CreatePaymentRequestModel
     {

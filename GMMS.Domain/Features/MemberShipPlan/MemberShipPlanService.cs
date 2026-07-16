@@ -62,7 +62,11 @@ namespace GMMS.Domain.Features.MemberShipPlan
                         DurationDays = x.DurationDays,
                         IsActive = x.IsActive,
                         CreatedAt = x.CreatedAt,
+                        CreatedByUser = x.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == x.CreatedBy).Select(u => u.UserName).FirstOrDefault(),
                         UpdatedAt = x.UpdatedAt,
+                        UpdatedByUser = x.UpdatedBy.HasValue
+                            ? x.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == x.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
+                            : null
                     })
                     .ToList();
 
@@ -104,7 +108,11 @@ namespace GMMS.Domain.Features.MemberShipPlan
                         Description = x.Description,
                         IsActive = x.IsActive,
                         CreatedAt = x.CreatedAt,
-                        UpdatedAt = x.UpdatedAt
+                        CreatedByUser = x.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == x.CreatedBy).Select(u => u.UserName).FirstOrDefault(),
+                        UpdatedAt = x.UpdatedAt,
+                        UpdatedByUser = x.UpdatedBy.HasValue
+                            ? x.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == x.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
+                            : null
                     })
                     .FirstOrDefault();
                 if (plan == null)
@@ -185,7 +193,8 @@ namespace GMMS.Domain.Features.MemberShipPlan
                         Price = plan.Price,
                         DurationDays = plan.DurationDays,
                         Description = plan.Description,
-                        CreatedAt = plan.CreatedAt
+                        CreatedAt = plan.CreatedAt,
+                        CreatedByUser = plan.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == plan.CreatedBy).Select(u => u.UserName).FirstOrDefault()
                     }
                 };
             }
@@ -258,7 +267,11 @@ namespace GMMS.Domain.Features.MemberShipPlan
                         Description = plan.Description,
                         IsActive = plan.IsActive,
                         CreatedAt = plan.CreatedAt,
-                        UpdatedAt = plan.UpdatedAt
+                        CreatedByUser = plan.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == plan.CreatedBy).Select(u => u.UserName).FirstOrDefault(),
+                        UpdatedAt = plan.UpdatedAt,
+                        UpdatedByUser = plan.UpdatedBy.HasValue
+                            ? plan.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == plan.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
+                            : null
                     }
                 };
             }

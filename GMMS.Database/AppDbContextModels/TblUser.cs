@@ -14,5 +14,7 @@ public partial class TblUser : BaseEntity
 
     public bool IsActive { get; set; }
 
+    public bool MustChangePassword { get; set; }
+
     public virtual ICollection<TblUserSession> Sessions { get; set; } = new List<TblUserSession>();
 }
