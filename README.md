@@ -139,6 +139,15 @@ dotnet run
   "BackendApiUrl": "https://localhost:7xxx/"
   ```
 
+### 4. Default Login Credentials
+
+| Role | Username | Password |
+|------|----------|----------|
+| **Owner** | `owner` | `Owner@123` |
+| **Admin** | `admin` | `Admin@123` |
+
+> Both accounts are forced to change password on first login.
+
 ---
 
 ## ⚙️ Configuration
