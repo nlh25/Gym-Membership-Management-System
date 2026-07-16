@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GMMS.Database.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260716050958_AddMustChangePasswordAndSeedUsers")]
+    [Migration("20260716071455_AddMustChangePasswordAndSeedUsers")]
     partial class AddMustChangePasswordAndSeedUsers
     {
         /// <inheritdoc />

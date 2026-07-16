@@ -186,7 +186,7 @@ public partial class AppDbContext : DbContext
             {
                 UserId = 1,
                 UserName = "owner",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Owner@123"),
+                PasswordHash = "$2a$11$51n3uUKJ0zfp8Suf/AH2wulPNfkwy4CqEslohD8VpYIwA5gTaOXKG",
                 Role = "Owner",
                 IsActive = true,
                 MustChangePassword = true,
@@ -198,7 +198,7 @@ public partial class AppDbContext : DbContext
             {
                 UserId = 2,
                 UserName = "admin",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
+                PasswordHash = "$2a$11$GJjdLlC9Kb9d4LGvnYVHO.IiBoNPUTRCDS4.TR92T7bHxTveFHtkq",
                 Role = "Admin",
                 IsActive = true,
                 MustChangePassword = true,

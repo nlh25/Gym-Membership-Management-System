@@ -12,6 +12,7 @@ public class LoginResponseModel
     public string UserName { get; set; } = null!;
     public string Role { get; set; } = null!;
     public string Token { get; set; } = null!;
+    public bool MustChangePassword { get; set; }
     public DateTime ExpiresAt { get; set; }
 }
 
