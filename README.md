@@ -248,9 +248,7 @@ private string _planStr
 
 ---
 
-## 📁 Database Schema (Full SQL)
 
-See [`docs/database-schema.sql`](docs/database-schema.sql) for complete CREATE TABLE scripts with constraints, indexes, and foreign keys.
 
 ---
 
