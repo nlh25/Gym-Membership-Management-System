@@ -250,8 +250,4 @@ private string _planStr
 
 
 
----
 
-## 📝 License
-
-MIT License - Feel free to use and modify.
