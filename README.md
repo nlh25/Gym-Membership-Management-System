@@ -248,6 +248,7 @@ private string _planStr
 
 ---
 # commands 
+
 dotnet ef migrations add InitialCreate --project GMMS.Database --startup-project GMMS.Api
 dotnet ef database update --project GMMS.Database --startup-project GMMS.Api
 
