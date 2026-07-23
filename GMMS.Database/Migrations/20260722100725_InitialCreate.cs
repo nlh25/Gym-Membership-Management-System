@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace GMMS.Database.Migrations
 {
     /// <inheritdoc />
@@ -102,6 +104,7 @@ namespace GMMS.Database.Migrations
                     PasswordHash = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     Role = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    MustChangePassword = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     CreatedBy = table.Column<int>(type: "int", nullable: false, defaultValueSql: "((1))"),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "(getdate())"),
@@ -198,6 +201,15 @@ namespace GMMS.Database.Migrations
                         column: x => x.PaymentMethodId,
                         principalTable: "Tbl_PaymentMethod",
                         principalColumn: "PaymentMethodId");
+                });
+
+            migrationBuilder.InsertData(
+                table: "Tbl_User",
+                columns: new[] { "UserId", "CreatedAt", "CreatedBy", "IsActive", "MustChangePassword", "PasswordHash", "Role", "UpdatedAt", "UpdatedBy", "UserName" },
+                values: new object[,]
+                {
+                    { 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), 1, true, true, "$2a$11$51n3uUKJ0zfp8Suf/AH2wulPNfkwy4CqEslohD8VpYIwA5gTaOXKG", "Owner", null, null, "owner" },
+                    { 2, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), 1, true, true, "$2a$11$GJjdLlC9Kb9d4LGvnYVHO.IiBoNPUTRCDS4.TR92T7bHxTveFHtkq", "Admin", null, null, "admin" }
                 });
 
             migrationBuilder.CreateIndex(

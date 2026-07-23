@@ -2,6 +2,7 @@
 using GMMS.Database.AppDbContextModels;
 using GMMS.Domain.Features.Member.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,24 +17,33 @@ namespace GMMS.Domain.Features.Member
         private readonly IValidator<CreateMemberRequestModel> _createValidator;
         private readonly IValidator<UpdateMemberRequestModel> _updateValidator;
         private readonly IValidator<MemberListRequestModel> _listValidator;
+        private readonly ILogger<MemberService> _logger;
+
 
         public MemberService(
             AppDbContext db,
             IValidator<CreateMemberRequestModel> createValidator,
             IValidator<UpdateMemberRequestModel> updateValidator,
-            IValidator<MemberListRequestModel> listValidator)
+            IValidator<MemberListRequestModel> listValidator,
+            ILogger<MemberService> logger)
         {
             _db = db;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
             _listValidator = listValidator;
+            _logger = logger;
         }
         
         public Result<MemberListResponseModel> GetList(MemberListRequestModel request)
         {
+
+            _logger.LogInformation("Retrieving member list with PageNumber: {PageNumber}, PageSize: {PageSize}, SearchTerm: {SearchTerm}", request.PageNumber, request.PageSize, request.SearchTerm);
+
             var validationResult = _listValidator.Validate(request);
             if (!validationResult.IsValid)
             {
+
+                _logger.LogWarning("Invalid member list request: {Errors}", string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
                 return new Result<MemberListResponseModel>
                 {
                     IsSuccess = false,
@@ -55,8 +65,11 @@ namespace GMMS.Domain.Features.Member
 
                 if (!string.IsNullOrWhiteSpace(request.SearchTerm))
                 {
-                    var search = request.SearchTerm.Trim().ToLower();
-                    query = query.Where(x => x.MemberCode.ToLower().Contains(search) || x.Name.ToLower().Contains(search));
+                    var search = request.SearchTerm.Trim();
+
+                    query = query.Where(x =>
+                        x.MemberCode.Contains(search) ||
+                        x.Name.Contains(search));
                 }
 
                 var totalCount = query.Count();
@@ -73,11 +86,13 @@ namespace GMMS.Domain.Features.Member
                         CreatedAt = x.CreatedAt,
                         CreatedByUser = x.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == x.CreatedBy).Select(u => u.UserName).FirstOrDefault(),
                         UpdatedAt = x.UpdatedAt,
+
                         UpdatedByUser = x.UpdatedBy.HasValue
                             ? x.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == x.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
                             : null
                     })
                     .ToList();
+                _logger.LogInformation("Retrieved {Count} members out of {TotalCount} total members.", members.Count, totalCount);
 
                 return new Result<MemberListResponseModel>
                 {
@@ -92,6 +107,7 @@ namespace GMMS.Domain.Features.Member
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "An error occurred while retrieving the member list.");
                 return new Result<MemberListResponseModel>
                 {
                     IsSuccess = false,
@@ -101,6 +117,7 @@ namespace GMMS.Domain.Features.Member
         }
         public Result<MemberModel> GetById(int memberId)
         {
+            _logger.LogInformation("Retrieving member with ID: {MemberId}", memberId);
             try
             {
                 var member = _db.TblMembers
@@ -112,16 +129,23 @@ namespace GMMS.Domain.Features.Member
                         MemberCode = x.MemberCode,
                         Name = x.Name,
                         CreatedAt = x.CreatedAt,
-                        CreatedByUser = x.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == x.CreatedBy).Select(u => u.UserName).FirstOrDefault(),
+                        CreatedByUser = x.CreatedBy + " - " + _db.TblUsers
+                                         .Where(u => u.UserId == x.CreatedBy)
+                                         .Select(u => u.UserName)
+                                         .FirstOrDefault(),
                         UpdatedAt = x.UpdatedAt,
                         UpdatedByUser = x.UpdatedBy.HasValue
-                            ? x.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == x.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
-                            : null
+                                        ? x.UpdatedBy.Value + " - " + _db.TblUsers
+                                           .Where(u => u.UserId == x.UpdatedBy.Value)
+                                           .Select(u => u.UserName)
+                                           .FirstOrDefault()
+                                            : null
                     })
                     .FirstOrDefault();
 
                 if (member == null)
                 {
+                    _logger.LogWarning("Member with ID: {MemberId} not found.", memberId);
                     return new Result<MemberModel>
                     {
                         IsSuccess = false,
@@ -129,6 +153,7 @@ namespace GMMS.Domain.Features.Member
                     };
                 }
 
+                _logger.LogInformation("Member with ID: {MemberId} retrieved successfully.", memberId);
                 return new Result<MemberModel>
                 {
                     IsSuccess = true,
@@ -138,6 +163,7 @@ namespace GMMS.Domain.Features.Member
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "An error occurred while retrieving member with ID: {MemberId}", memberId);
                 return new Result<MemberModel>
                 {
                     IsSuccess = false,
@@ -147,9 +173,11 @@ namespace GMMS.Domain.Features.Member
         }
         public Result<MemberModel> Create(CreateMemberRequestModel request)
         {
+            _logger.LogInformation("Creating a new member with MemberCode: {MemberCode}, Name: {Name}", request.MemberCode, request.Name);
             var validationResult = _createValidator.Validate(request);
             if (!validationResult.IsValid)
             {
+                _logger.LogWarning("Invalid member creation request: {Errors}", string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
                 return new Result<MemberModel>
                 {
                     IsSuccess = false,
@@ -167,6 +195,7 @@ namespace GMMS.Domain.Features.Member
 
                 if (exists)
                 {
+                    _logger.LogWarning("Member with MemberCode: {MemberCode} already exists.", request.MemberCode);
                     return new Result<MemberModel>
                     {
                         IsSuccess = false,
@@ -185,6 +214,7 @@ namespace GMMS.Domain.Features.Member
                 _db.TblMembers.Add(member);
                 _db.SaveChanges();
 
+                _logger.LogInformation("Member created successfully with MemberId: {MemberId} and MemberCode: {MemberCode}", member.MemberId, member.MemberCode);
                 return new Result<MemberModel>
                 {
                     IsSuccess = true,
@@ -197,10 +227,12 @@ namespace GMMS.Domain.Features.Member
                         CreatedAt = member.CreatedAt,
                         UpdatedAt = member.UpdatedAt
                     }
+                   
                 };
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "An error occurred while creating a new member with MemberCode: {MemberCode} and Name: {Name}", request.MemberCode, request.Name);
                 return new Result<MemberModel>
                 {
                     IsSuccess = false,
@@ -210,9 +242,11 @@ namespace GMMS.Domain.Features.Member
         }
         public Result<MemberModel> Update(int id, UpdateMemberRequestModel request)
         {
+            _logger.LogInformation("Updating member with ID: {MemberId}, MemberCode: {MemberCode}, Name: {Name}", id, request.MemberCode, request.Name);
             var validationResult = _updateValidator.Validate(request);
             if (!validationResult.IsValid)
             {
+                _logger.LogWarning("Invalid member update request: {Errors}", string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
                 return new Result<MemberModel>
                 {
                     IsSuccess = false,
@@ -227,6 +261,7 @@ namespace GMMS.Domain.Features.Member
                     .FirstOrDefault();
                 if (member == null)
                 {
+                    _logger.LogWarning("Member with ID: {MemberId} not found.", request.MemberId);
                     return new Result<MemberModel>
                     {
                         IsSuccess = false,
@@ -241,6 +276,7 @@ namespace GMMS.Domain.Features.Member
                     .Any(x => !x.IsDeleted && x.MemberCode.ToUpper() == request.MemberCode && x.MemberId != request.MemberId);
                 if (exists)
                 {
+                    _logger.LogWarning("Member with MemberCode: {MemberCode} already exists.", request.MemberCode);
                     return new Result<MemberModel>
                     {
                         IsSuccess = false,
@@ -253,7 +289,7 @@ namespace GMMS.Domain.Features.Member
                 member.UpdatedAt = DateTime.UtcNow;
              
                 _db.SaveChanges();
-
+                _logger.LogInformation("Member with ID: {MemberId} updated successfully.", request.MemberId);
                 return new Result<MemberModel>
                 {
                     IsSuccess = true,
@@ -274,6 +310,7 @@ namespace GMMS.Domain.Features.Member
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "An error occurred while updating member with ID: {MemberId}, MemberCode: {MemberCode}, Name: {Name}", request.MemberId, request.MemberCode, request.Name);
                 return new Result<MemberModel>
                 {
                     IsSuccess = false,
@@ -284,6 +321,7 @@ namespace GMMS.Domain.Features.Member
         }
         public Result<bool> Delete(int memberId)
         {
+            _logger.LogInformation("Deleting member with ID: {MemberId}", memberId);
             try
             {
                 var member = _db.TblMembers
@@ -291,6 +329,7 @@ namespace GMMS.Domain.Features.Member
                     .FirstOrDefault();
                 if (member == null)
                 {
+                    _logger.LogWarning("Member with ID: {MemberId} not found.", memberId);
                     return new Result<bool>
                     {
                         IsSuccess = false,
@@ -300,6 +339,7 @@ namespace GMMS.Domain.Features.Member
                 member.IsDeleted = true;
                 member.UpdatedAt = DateTime.UtcNow;
                 _db.SaveChanges();
+                _logger.LogInformation("Member with ID: {MemberId} deleted successfully.", memberId);
                 return new Result<bool>
                 {
                     IsSuccess = true,
@@ -309,6 +349,7 @@ namespace GMMS.Domain.Features.Member
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "An error occurred while deleting member with ID: {MemberId}", memberId);
                 return new Result<bool>
                 {
                     IsSuccess = false,

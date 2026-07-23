@@ -9,7 +9,7 @@ public partial class TblMember : BaseEntity
 
     public string MemberCode { get; set; } = null!;
 
-    public string Name { get; set; } = null!;
+    public string Name { get; set; } = null!; 
 
     public virtual ICollection<TblMembership> TblMemberships { get; set; } = new List<TblMembership>();
 }

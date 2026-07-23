@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GMMS.Database.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260715084132_InitialCreate")]
+    [Migration("20260722100725_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -368,6 +368,11 @@ namespace GMMS.Database.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
+                    b.Property<bool>("MustChangePassword")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -396,6 +401,32 @@ namespace GMMS.Database.Migrations
                         .IsUnique();
 
                     b.ToTable("Tbl_User", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = 1,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = 1,
+                            IsActive = true,
+                            IsDeleted = false,
+                            MustChangePassword = true,
+                            PasswordHash = "$2a$11$51n3uUKJ0zfp8Suf/AH2wulPNfkwy4CqEslohD8VpYIwA5gTaOXKG",
+                            Role = "Owner",
+                            UserName = "owner"
+                        },
+                        new
+                        {
+                            UserId = 2,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = 1,
+                            IsActive = true,
+                            IsDeleted = false,
+                            MustChangePassword = true,
+                            PasswordHash = "$2a$11$GJjdLlC9Kb9d4LGvnYVHO.IiBoNPUTRCDS4.TR92T7bHxTveFHtkq",
+                            Role = "Admin",
+                            UserName = "admin"
+                        });
                 });
 
             modelBuilder.Entity("GMMS.Database.AppDbContextModels.TblUserSession", b =>
