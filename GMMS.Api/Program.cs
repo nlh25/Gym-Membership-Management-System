@@ -16,6 +16,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(new ConfigurationBuilder()
@@ -31,107 +33,114 @@ try
 
     builder.Host.UseSerilog();
 
-// Add services to the container.
+ // Add services to the container.
 
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Enter your JWT token"
-    });
-    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-    {
-        {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
-});
+ builder.Services.AddControllers();
+ // Health checks (basic) — can be extended to check DB, external deps, etc.
+ builder.Services.AddHealthChecks();
+ // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+ builder.Services.AddEndpointsApiExplorer();
+ builder.Services.AddSwaggerGen(options =>
+ {
+     options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+     {
+         Name = "Authorization",
+         Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+         Scheme = "Bearer",
+         BearerFormat = "JWT",
+         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+         Description = "Enter your JWT token"
+     });
+     options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+     {
+         {
+             new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+             {
+                 Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                 {
+                     Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                     Id = "Bearer"
+                 }
+             },
+             Array.Empty<string>()
+         }
+     });
+ });
 
-builder.Services.AddDbContext<AppDbContext>(opt =>
-{
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("DbConnection"));
-});
+ builder.Services.AddDbContext<AppDbContext>(opt =>
+ {
+     opt.UseSqlServer(builder.Configuration.GetConnectionString("DbConnection"));
+ });
 
-// JWT Authentication
-var jwtKey = builder.Configuration["JwtSettings:Key"];
-var jwtIssuer = builder.Configuration["JwtSettings:Issuer"];
-var jwtAudience = builder.Configuration["JwtSettings:Audience"];
+ // JWT Authentication
+ var jwtKey = builder.Configuration["JwtSettings:Key"];
+ var jwtIssuer = builder.Configuration["JwtSettings:Issuer"];
+ var jwtAudience = builder.Configuration["JwtSettings:Audience"];
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtIssuer,
-        ValidAudience = jwtAudience,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey!)),
-        ClockSkew = TimeSpan.Zero
-    };
-});
+ builder.Services.AddAuthentication(options =>
+ {
+     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+ })
+ .AddJwtBearer(options =>
+ {
+     options.TokenValidationParameters = new TokenValidationParameters
+     {
+         ValidateIssuer = true,
+         ValidateAudience = true,
+         ValidateLifetime = true,
+         ValidateIssuerSigningKey = true,
+         ValidIssuer = jwtIssuer,
+         ValidAudience = jwtAudience,
+         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey!)),
+         ClockSkew = TimeSpan.Zero
+     };
+ });
 
-builder.Services.AddAuthorization();
+ builder.Services.AddAuthorization();
 
-builder.Services.AddValidatorsFromAssemblyContaining<CreateMemberRequestValidator>();
+ builder.Services.AddValidatorsFromAssemblyContaining<CreateMemberRequestValidator>();
 
-    //Service
-builder.Services.AddScoped<MemberService>();
-builder.Services.AddScoped<MemberShipPlanService>();
-builder.Services.AddScoped<MemberShipService>();
-builder.Services.AddScoped<PaymentMethodService>();
-builder.Services.AddScoped<PaymentService>();
-builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<UserService>();
+     //Service
+ builder.Services.AddScoped<MemberService>();
+ builder.Services.AddScoped<MemberShipPlanService>();
+ builder.Services.AddScoped<MemberShipService>();
+ builder.Services.AddScoped<PaymentMethodService>();
+ builder.Services.AddScoped<PaymentService>();
+ builder.Services.AddScoped<AuthService>();
+ builder.Services.AddScoped<UserService>();
 
-var app = builder.Build();
+ var app = builder.Build();
+  
+ //Middleware
+ app.UseMiddleware<ExceptionMiddleware>();
+ // Serilog request logging
+ app.UseSerilogRequestLogging();
  
-//Middleware
-app.UseMiddleware<ExceptionMiddleware>();
+ // Configure the HTTP request pipeline.
+ if (app.Environment.IsDevelopment())
+ {
+     app.UseSwagger();
+     app.UseSwaggerUI();
+ }
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+ app.UseHttpsRedirection();
 
-app.UseHttpsRedirection();
+ app.UseAuthentication();
+ app.UseAuthorization();
 
-app.UseAuthentication();
-app.UseAuthorization();
+ // Map health endpoint
+ app.MapHealthChecks("/health");
 
-app.MapControllers();
+ app.MapControllers();
 
-app.Run();
-}
-catch (Exception ex)
-{
-    Log.Fatal(ex, "Application terminated unexpectedly");
-}
-finally
-{
-    Log.CloseAndFlush();
-}
+ app.Run();
+ }
+ catch (Exception ex)
+ {
+     Log.Fatal(ex, "Application terminated unexpectedly");
+ }
+ finally
+ {
+     Log.CloseAndFlush();
+ }
