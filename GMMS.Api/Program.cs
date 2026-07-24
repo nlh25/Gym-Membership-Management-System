@@ -1,8 +1,8 @@
 using FluentValidation;
+using GMMS.Api.Health;
 using GMMS.Api.Middleware;
 using GMMS.Database.AppDbContextModels;
 using GMMS.Domain.Features.Auth;
-
 using GMMS.Domain.Features.Member;
 using GMMS.Domain.Features.Member.Models;
 using GMMS.Domain.Features.MemberShip;
@@ -11,40 +11,16 @@ using GMMS.Domain.Features.Payment;
 using GMMS.Domain.Features.PaymentMethod;
 using GMMS.Domain.Features.User;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
-using System.Text;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using System.Text.Json;
 using System.Linq;
+using System.Text;
+using System.Text.Json;
 
 // Health check that uses AppDbContext to verify DB connectivity
-public class DbHealthCheck : IHealthCheck
-{
-    private readonly IServiceProvider _provider;
-
-    public DbHealthCheck(IServiceProvider provider)
-    {
-        _provider = provider;
-    }
-
-    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            using var scope = _provider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var canConnect = await db.Database.CanConnectAsync(cancellationToken);
-            return canConnect ? HealthCheckResult.Healthy("Database reachable") : HealthCheckResult.Unhealthy("Cannot connect to database");
-        }
-        catch (Exception ex)
-        {
-            return HealthCheckResult.Unhealthy(ex.Message, ex);
-        }
-    }
-}
 
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(new ConfigurationBuilder()
