@@ -190,49 +190,9 @@ GymMembershipManagementSystem/
 
 ---
 
-## 🔧 Dropdown Fix (Membership Create/Edit)
 
-**Issue**: MudBlazor `<MudSelect>` with `@foreach` didn't re-render items after async data load.
 
-**Solution**: Use native `<select class="form-select">` with string binding properties:
 
-```razor
-<!-- In MembershipCreate.razor -->
-<div class="mb-4">
-    <MudText Typo="Typo.body2" Class="mb-1"><strong>Plan</strong> <span class="text-danger">*</span></MudText>
-    <select class="form-select" @bind-value="_planStr" @bind-value:event="onchange">
-        <option value="">-- Select Plan --</option>
-        @foreach (var p in plans)
-        {
-            <option value="@p.MemberShipPlanId">@p.PlanName (@p.DurationDays days - @p.Price.ToString("C2"))</option>
-        }
-    </select>
-</div>
-```
-
-```csharp
-// In MembershipCreate.razor.cs
-private string _planStr
-{
-    get => request.MembershipPlanId > 0 ? request.MembershipPlanId.ToString() : "";
-    set => request.MembershipPlanId = int.TryParse(value, out var id) ? id : 0;
-}
-```
-
-**Why**: Native `<select>` re-renders automatically when `plans` list updates; `MudSelect` with `@foreach` requires `Key` attribute or manual `StateHasChanged()`.
-
----
-
-## 🐛 Troubleshooting
-
-| Issue | Cause | Fix |
-|-------|-------|-----|
-| **Dropdown empty** | API not running / wrong URL | Check `BackendApiUrl` in `GMMS.App/appsettings.json`; ensure API runs |
-| **API 404 / Swagger not loading** | API not started | Run `dotnet run` in `GMMS.Api` |
-| **CORS Error** | Blazor app calling API cross-origin | Add `builder.Services.AddCors()` in `GMMS.Api/Program.cs` |
-| **DB Migration fails** | SQL Server not running / wrong connection | Use LocalDB: `Server=(localdb)\\mssqllocaldb;Database=GMMSDb;Trusted_Connection=True;` |
-| **Dropdown shows but no items** | `plans`/`members` list empty | Check Network tab → API calls returning data; verify `StateHasChanged()` called |
-| **PaymentMethod not saving** | `IsActive` not bound | Ensure `<MudSwitch @bind-Checked="request.IsActive" />` or `<select>` for bool |
 
 ---
 
