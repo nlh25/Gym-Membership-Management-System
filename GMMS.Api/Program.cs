@@ -2,7 +2,7 @@ using FluentValidation;
 using GMMS.Api.Middleware;
 using GMMS.Database.AppDbContextModels;
 using GMMS.Domain.Features.Auth;
-using GMMS.Domain.Features.Auth.Models;
+
 using GMMS.Domain.Features.Member;
 using GMMS.Domain.Features.Member.Models;
 using GMMS.Domain.Features.MemberShip;
@@ -10,7 +10,6 @@ using GMMS.Domain.Features.MemberShipPlan;
 using GMMS.Domain.Features.Payment;
 using GMMS.Domain.Features.PaymentMethod;
 using GMMS.Domain.Features.User;
-using GMMS.Domain.Features.User.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
