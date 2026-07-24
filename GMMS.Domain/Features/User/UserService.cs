@@ -27,9 +27,9 @@ public class UserService
         _resetPasswordValidator = resetPasswordValidator;
     }
 
-    public Result<UserListResponseModel> GetList(UserListRequestModel request)
+    public async Task< Result<UserListResponseModel>> GetList(UserListRequestModel request)
     {
-        var validationResult = _listValidator.Validate(request);
+        var validationResult = await _listValidator.ValidateAsync(request);
         if (!validationResult.IsValid)
         {
             return new Result<UserListResponseModel>
@@ -39,8 +39,7 @@ public class UserService
             };
         }
 
-        try
-        {
+        
             var query = _db.TblUsers
                 .AsNoTracking()
                 .Where(x => !x.IsDeleted);
@@ -51,9 +50,9 @@ public class UserService
                 query = query.Where(x => x.UserName.ToLower().Contains(search) || x.Role.ToLower().Contains(search));
             }
 
-            var totalCount = query.Count();
+            var totalCount = await  query.CountAsync();
 
-            var users = query
+            var users = await query
                 .OrderByDescending(x => x.UserId)
                 .Skip((request.PageNumber - 1) * request.PageSize)
                 .Take(request.PageSize)
@@ -65,13 +64,19 @@ public class UserService
                     IsActive = x.IsActive,
                     MustChangePassword = x.MustChangePassword,
                     CreatedAt = x.CreatedAt,
-                    CreatedByUser = x.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == x.CreatedBy).Select(u => u.UserName).FirstOrDefault(),
+                    CreatedByUser = x.CreatedBy + " - " + _db.TblUsers
+                    .Where(u => u.UserId == x.CreatedBy)
+                    .Select(u => u.UserName)
+                    .FirstOrDefault(),
                     UpdatedAt = x.UpdatedAt,
                     UpdatedByUser = x.UpdatedBy.HasValue
-                        ? x.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == x.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
+                        ? x.UpdatedBy.Value + " - " + _db.TblUsers
+                        .Where(u => u.UserId == x.UpdatedBy.Value)
+                        .Select(u => u.UserName)
+                        .FirstOrDefault()
                         : null
                 })
-                .ToList();
+                .ToListAsync();
 
             return new Result<UserListResponseModel>
             {
@@ -83,22 +88,14 @@ public class UserService
                     Users = users
                 }
             };
-        }
-        catch (Exception ex)
-        {
-            return new Result<UserListResponseModel>
-            {
-                IsSuccess = false,
-                Message = ex.Message
-            };
-        }
+        
+       
     }
 
-    public Result<UserModel> GetById(int userId)
+    public async Task <Result<UserModel>> GetById(int userId)
     {
-        try
-        {
-            var user = _db.TblUsers
+       
+            var user = await _db.TblUsers
                 .AsNoTracking()
                 .Where(x => !x.IsDeleted && x.UserId == userId)
                 .Select(x => new UserModel
@@ -115,7 +112,7 @@ public class UserService
                         ? x.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == x.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
                         : null
                 })
-                .FirstOrDefault();
+                .FirstOrDefaultAsync();
 
             if (user == null)
             {
@@ -132,20 +129,12 @@ public class UserService
                 Message = "User retrieved successfully.",
                 Data = user
             };
-        }
-        catch (Exception ex)
-        {
-            return new Result<UserModel>
-            {
-                IsSuccess = false,
-                Message = ex.Message
-            };
-        }
+        
     }
 
-    public Result<UserModel> Create(CreateUserRequestModel request)
+    public async Task<Result<UserModel>> Create(CreateUserRequestModel request)
     {
-        var validationResult = _createValidator.Validate(request);
+        var validationResult =await  _createValidator.ValidateAsync(request);
         if (!validationResult.IsValid)
         {
             return new Result<UserModel>
@@ -155,12 +144,13 @@ public class UserService
             };
         }
 
-        try
-        {
-            request.UserName = request.UserName.Trim().ToLowerInvariant();
+       
+            request.UserName = request.UserName
+                .Trim()
+                .ToLowerInvariant();
 
-            var exists = _db.TblUsers
-                .Any(x => !x.IsDeleted && x.UserName == request.UserName);
+            var exists = await _db.TblUsers
+                .AnyAsync(x => !x.IsDeleted && x.UserName == request.UserName);
 
             if (exists)
             {
@@ -182,8 +172,8 @@ public class UserService
                 CreatedAt = DateTime.UtcNow
             };
 
-            _db.TblUsers.Add(user);
-            _db.SaveChanges();
+            await _db.TblUsers.AddAsync(user);
+            await _db.SaveChangesAsync();
 
             return new Result<UserModel>
             {
@@ -200,20 +190,13 @@ public class UserService
                     CreatedByUser = user.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == user.CreatedBy).Select(u => u.UserName).FirstOrDefault()
                 }
             };
-        }
-        catch (Exception ex)
-        {
-            return new Result<UserModel>
-            {
-                IsSuccess = false,
-                Message = ex.Message
-            };
-        }
+        
+        
     }
 
-    public Result<UserModel> Update(int id, UpdateUserRequestModel request)
+    public async Task<Result<UserModel>> Update(int id, UpdateUserRequestModel request)
     {
-        var validationResult = _updateValidator.Validate(request);
+        var validationResult = await _updateValidator.ValidateAsync(request);
         if (!validationResult.IsValid)
         {
             return new Result<UserModel>
@@ -223,10 +206,9 @@ public class UserService
             };
         }
 
-        try
-        {
-            var user = _db.TblUsers
-                .FirstOrDefault(x => !x.IsDeleted && x.UserId == request.UserId);
+       
+            var user =await _db.TblUsers
+                .FirstOrDefaultAsync(x => !x.IsDeleted && x.UserId == request.UserId);
 
             if (user == null)
             {
@@ -239,8 +221,8 @@ public class UserService
 
             request.UserName = request.UserName.Trim().ToLowerInvariant();
 
-            var exists = _db.TblUsers
-                .Any(x => !x.IsDeleted && x.UserName == request.UserName && x.UserId != request.UserId);
+            var exists = await _db.TblUsers
+                .AnyAsync(x => !x.IsDeleted && x.UserName == request.UserName && x.UserId != request.UserId);
 
             if (exists)
             {
@@ -255,7 +237,7 @@ public class UserService
             user.Role = request.Role;
             user.IsActive = request.IsActive;
             user.UpdatedAt = DateTime.UtcNow;
-            _db.SaveChanges();
+            await _db.SaveChangesAsync();
 
             return new Result<UserModel>
             {
@@ -276,20 +258,12 @@ public class UserService
                         : null
                 }
             };
-        }
-        catch (Exception ex)
-        {
-            return new Result<UserModel>
-            {
-                IsSuccess = false,
-                Message = ex.Message
-            };
-        }
+        
     }
 
-    public Result<bool> ResetPassword(ResetPasswordRequestModel request)
+    public async Task <Result<bool> >ResetPassword(ResetPasswordRequestModel request)
     {
-        var validationResult = _resetPasswordValidator.Validate(request);
+        var validationResult =await _resetPasswordValidator.ValidateAsync(request);
         if (!validationResult.IsValid)
         {
             return new Result<bool>
@@ -299,10 +273,9 @@ public class UserService
             };
         }
 
-        try
-        {
-            var user = _db.TblUsers
-                .FirstOrDefault(x => !x.IsDeleted && x.UserId == request.UserId);
+        
+            var user = await _db.TblUsers
+                .FirstOrDefaultAsync(x => !x.IsDeleted && x.UserId == request.UserId);
 
             if (user == null)
             {
@@ -316,7 +289,7 @@ public class UserService
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             user.MustChangePassword = true;
             user.UpdatedAt = DateTime.UtcNow;
-            _db.SaveChanges();
+            await _db.SaveChangesAsync();
 
             return new Result<bool>
             {
@@ -324,23 +297,14 @@ public class UserService
                 Message = "Password reset successfully. User must change password on next login.",
                 Data = true
             };
-        }
-        catch (Exception ex)
-        {
-            return new Result<bool>
-            {
-                IsSuccess = false,
-                Message = ex.Message
-            };
-        }
+       
     }
 
-    public Result<bool> Delete(int userId)
+    public async Task <Result<bool>> Delete(int userId)
     {
-        try
-        {
-            var user = _db.TblUsers
-                .FirstOrDefault(x => !x.IsDeleted && x.UserId == userId);
+        
+            var user = await _db.TblUsers
+                .FirstOrDefaultAsync(x => !x.IsDeleted && x.UserId == userId);
 
             if (user == null)
             {
@@ -353,7 +317,7 @@ public class UserService
 
             user.IsDeleted = true;
             user.UpdatedAt = DateTime.UtcNow;
-            _db.SaveChanges();
+            await _db.SaveChangesAsync();
 
             return new Result<bool>
             {
@@ -361,14 +325,7 @@ public class UserService
                 Message = "User deleted successfully.",
                 Data = true
             };
-        }
-        catch (Exception ex)
-        {
-            return new Result<bool>
-            {
-                IsSuccess = false,
-                Message = ex.Message
-            };
-        }
+        
+       
     }
 }

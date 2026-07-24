@@ -22,7 +22,7 @@
         else
         {
             <MudTextField @bind-Value="request.MemberCode"
-                          @oninput="OnMemberCodeChanged"
+                          @bind-Value:after="ConvertMemberCodeUpper"
                           Label="Member Code"
                           Variant="Variant.Outlined"
                           Required="true"

@@ -29,9 +29,9 @@ public class AuthService
         _changePasswordValidator = changePasswordValidator;
     }
 
-    public Result<LoginResponseModel> Login(LoginRequestModel request)
+    public async Task <Result<LoginResponseModel>> Login(LoginRequestModel request)
     {
-        var validationResult = _loginValidator.Validate(request);
+        var validationResult =  await _loginValidator.ValidateAsync(request);
         if (!validationResult.IsValid)
         {
             return new Result<LoginResponseModel>
@@ -41,12 +41,11 @@ public class AuthService
             };
         }
 
-        try
-        {
-            var user = _db.TblUsers
-                .FirstOrDefault(x => !x.IsDeleted && x.UserName == request.UserName && x.IsActive);
+       
+            var user = await _db.TblUsers
+                .FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == request.UserName && x.IsActive);
 
-            if (user == null)
+            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             {
                 return new Result<LoginResponseModel>
                 {
@@ -55,16 +54,9 @@ public class AuthService
                 };
             }
 
-            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-            {
-                return new Result<LoginResponseModel>
-                {
-                    IsSuccess = false,
-                    Message = "Invalid username or password."
-                };
-            }
+           
 
-            var tokenResult = GenerateToken(user);
+            var tokenResult = await GenerateToken(user);
             if (!tokenResult.IsSuccess)
             {
                 return new Result<LoginResponseModel>
@@ -82,8 +74,8 @@ public class AuthService
                 IsExpired = false
             };
 
-            _db.TblUserSessions.Add(session);
-            _db.SaveChanges();
+            await _db.TblUserSessions.AddAsync(session);
+            await _db.SaveChangesAsync();
 
             return new Result<LoginResponseModel>
             {
@@ -91,20 +83,12 @@ public class AuthService
                 Message = "Login successful.",
                 Data = tokenResult.Data
             };
-        }
-        catch (Exception ex)
-        {
-            return new Result<LoginResponseModel>
-            {
-                IsSuccess = false,
-                Message = ex.Message
-            };
-        }
+        
     }
 
-    public Result<bool> ChangePassword(int userId, ChangePasswordRequestModel request)
+    public async Task<Result<bool>> ChangePassword(int userId, ChangePasswordRequestModel request)
     {
-        var validationResult = _changePasswordValidator.Validate(request);
+        var validationResult = await _changePasswordValidator.ValidateAsync(request);
         if (!validationResult.IsValid)
         {
             return new Result<bool>
@@ -114,10 +98,9 @@ public class AuthService
             };
         }
 
-        try
-        {
-            var user = _db.TblUsers
-                .FirstOrDefault(x => !x.IsDeleted && x.UserId == userId && x.IsActive);
+       
+            var user = await _db.TblUsers
+                .FirstOrDefaultAsync(x => !x.IsDeleted && x.UserId == userId && x.IsActive);
 
             if (user == null)
             {
@@ -140,7 +123,7 @@ public class AuthService
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             user.MustChangePassword = false;
             user.UpdatedAt = DateTime.UtcNow;
-            _db.SaveChanges();
+            await _db.SaveChangesAsync();
 
             return new Result<bool>
             {
@@ -148,21 +131,13 @@ public class AuthService
                 Message = "Password changed successfully.",
                 Data = true
             };
-        }
-        catch (Exception ex)
-        {
-            return new Result<bool>
-            {
-                IsSuccess = false,
-                Message = ex.Message
-            };
-        }
+        
+       
     }
 
-    private Result<LoginResponseModel> GenerateToken(TblUser user)
+    private async Task< Result<LoginResponseModel>> GenerateToken(TblUser user)
     {
-        try
-        {
+       
             var jwtKey = _configuration["JwtSettings:Key"];
             var jwtIssuer = _configuration["JwtSettings:Issuer"];
             var jwtAudience = _configuration["JwtSettings:Audience"];
@@ -213,14 +188,6 @@ public class AuthService
                     ExpiresAt = expiresAt
                 }
             };
-        }
-        catch (Exception ex)
-        {
-            return new Result<LoginResponseModel>
-            {
-                IsSuccess = false,
-                Message = ex.Message
-            };
-        }
+       
     }
 }

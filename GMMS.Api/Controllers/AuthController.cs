@@ -18,18 +18,18 @@ namespace GMMS.Api.Controllers
         }
 
         [HttpPost("login")]
-        public IActionResult Login([FromBody] LoginRequestModel request)
+        public async Task <IActionResult> Login([FromBody] LoginRequestModel request)
         {
-            var result = _authService.Login(request);
+            var result = await _authService.Login(request);
             return Execute(result);
         }
 
         [Authorize]
         [HttpPost("change-password")]
-        public IActionResult ChangePassword([FromBody] ChangePasswordRequestModel request)
+        public async Task <IActionResult> ChangePassword([FromBody] ChangePasswordRequestModel request)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            var result = _authService.ChangePassword(userId, request);
+            var result = await _authService.ChangePassword(userId, request);
             return Execute(result);
         }
     }

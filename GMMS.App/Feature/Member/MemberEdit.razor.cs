@@ -51,9 +51,9 @@ namespace GMMS.App.Feature.Member
             }
         }
 
-        private void OnMemberCodeChanged(string value)
+        private void ConvertMemberCodeUpper()
         {
-            request.MemberCode = value?.ToUpperInvariant() ?? "";
+            request.MemberCode = request.MemberCode?.ToUpperInvariant() ?? "";
         }
 
         private void Cancel()
