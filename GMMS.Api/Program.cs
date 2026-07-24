@@ -1,4 +1,5 @@
 using FluentValidation;
+using GMMS.Api.Middleware;
 using GMMS.Database.AppDbContextModels;
 using GMMS.Domain.Features.Auth;
 using GMMS.Domain.Features.Auth.Models;
@@ -96,6 +97,7 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddValidatorsFromAssemblyContaining<CreateMemberRequestValidator>();
 
+    //Service
 builder.Services.AddScoped<MemberService>();
 builder.Services.AddScoped<MemberShipPlanService>();
 builder.Services.AddScoped<MemberShipService>();
@@ -105,7 +107,9 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserService>();
 
 var app = builder.Build();
-
+ 
+//Middleware
+app.UseMiddleware<ExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

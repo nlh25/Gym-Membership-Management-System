@@ -18,10 +18,10 @@ namespace GMMS.Api.Controllers
             _logger = logger;
         }
         [HttpGet]
-        public IActionResult MemberList([FromQuery] MemberListRequestModel request)
+        public async  Task<IActionResult> MemberList([FromQuery] MemberListRequestModel request)
         {
             _logger.LogInformation("MemberList API called. Page={PageNumber}, PageSize={PageSize}, SearchTerm={SearchTerm}",request.PageNumber,request.PageSize,request.SearchTerm);
-            var result = _memberService.GetList(request);
+            var result = await _memberService.GetList(request);
             if (result.IsSuccess)
             {
                 _logger.LogInformation("MemberList API successful. Total members fetched: {Count}", result.Data?.Members?.Count ?? 0);
@@ -36,10 +36,10 @@ namespace GMMS.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetMemberById([FromRoute] int id)
+        public async Task <IActionResult> GetMemberById([FromRoute] int id)
         {
             _logger.LogInformation("GetMemberById Api called. MemberId:{MemberId}",id);
-            var result = _memberService.GetById(id); 
+            var result = await _memberService.GetById(id); 
             if (result.IsSuccess)
             {
                 _logger.LogInformation( "GetMemberById API completed successfully. MemberId:{MemberId}",id);
@@ -51,10 +51,10 @@ namespace GMMS.Api.Controllers
             return Execute(result);
         }
         [HttpPost]
-        public IActionResult CreateMember([FromBody] CreateMemberRequestModel request)
+        public async Task<IActionResult> CreateMember([FromBody] CreateMemberRequestModel request)
         {
             _logger.LogInformation("CreateMember Api Called. MemberCode:{MemberCode} , Name:{Name}",request.MemberCode,request.Name);
-            var result = _memberService.Create(request);
+            var result = await _memberService.Create(request);
             if(result.IsSuccess)
             {
                 _logger.LogInformation("CreateMember API completed successfully. MemberCode:{MemberCode} , Name:{Name}", request.MemberCode, request.Name);
@@ -66,7 +66,7 @@ namespace GMMS.Api.Controllers
             return Execute(result);
         }
         [HttpPut("{id}")]
-        public IActionResult UpdateMember([FromRoute] int id, [FromBody] UpdateMemberRequestModel request)
+        public async Task <IActionResult> UpdateMember([FromRoute] int id, [FromBody] UpdateMemberRequestModel request)
         {
             _logger.LogInformation("UpdateMember Api Called.MemberId:{MemberId},MemberCode:{MemberCode}", id, request.MemberCode);
             if (id != request.MemberId)
@@ -74,7 +74,7 @@ namespace GMMS.Api.Controllers
                 _logger.LogWarning("Rourte ID does not match request body ID.RouteId:{RouteID}.BodyId:{BodyId}", id, request.MemberId);
                 return BadRequest("Member ID in the route does not match the ID in the request body.");
             }
-            var result = _memberService.Update(id, request);
+            var result = await _memberService.Update(id, request);
             if (result.IsSuccess)
             {
                 _logger.LogInformation("UpdateMember Api complteted Sucessfully.MemberId:{MemberId}",result.Data?.MemberId);
@@ -86,10 +86,10 @@ namespace GMMS.Api.Controllers
             return Execute(result);
         }
         [HttpDelete("{id}")]
-        public IActionResult DeleteMember([FromRoute] int id)
+        public async Task <IActionResult> DeleteMember([FromRoute] int id)
         {
             _logger.LogInformation("DeleteMember Api called. MemberId:{MemberId}",id);
-            var result = _memberService.Delete(id);
+            var result = await _memberService.Delete(id);
             if (result.IsSuccess)
             {
                 _logger.LogInformation("DeleteMember Api completed sucessful. MemberId:{MemberId}",id);

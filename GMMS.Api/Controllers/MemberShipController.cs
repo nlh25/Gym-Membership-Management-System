@@ -10,53 +10,120 @@ namespace GMMS.Api.Controllers
     public class MemberShipController : BaseController
     {
         private readonly MemberShipService _memberShipService;
-        public MemberShipController(MemberShipService memberShipService)
+        private readonly ILogger<MemberShipController> _logger;
+
+        public MemberShipController(MemberShipService memberShipService, ILogger<MemberShipController> logger)
         {
             _memberShipService = memberShipService;
+            _logger = logger;
         }
         [HttpGet]
-        public IActionResult Memberlist([FromQuery] MemberShipListRequestModel request)
+        public async Task <IActionResult> Memberlist([FromQuery] MemberShipListRequestModel request)
         {
-            if (request.MemberId <= 0)
-                return BadRequest("MemberId is required.");
+            _logger.LogInformation("MemberList API called. MemberId={MemberId}, Page={PageNumber}, PageSize={PageSize}", request.MemberId, request.PageNumber, request.PageSize);
 
-            var result = _memberShipService.GetList(request);
+            if (request.MemberId <= 0)
+            {
+                _logger.LogWarning("MemberList API failed. MemberId is required.");
+                return BadRequest("MemberId is required.");
+            }
+
+            var result =  await _memberShipService.GetList(request);
+            if (result.IsSuccess)
+            {
+                _logger.LogInformation("MemberList API successful. Total memberships fetched: {Count}", result.Data?.MemberShips?.Count ?? 0);
+            }
+            else
+            {
+                _logger.LogWarning("MemberList API failed. Message: {Message}", result.Message);
+            }
             return Execute(result);
         }
 
         [HttpGet("all")]
-        public IActionResult GetAllMemberships([FromQuery] AllMemberShipListRequestModel request)
+        public async Task <IActionResult> GetAllMemberships([FromQuery] AllMemberShipListRequestModel request)
         {
-            var result = _memberShipService.GetAllList(request);
+            _logger.LogInformation("GetAllMemberships API called. Page={PageNumber}, PageSize={PageSize}, SearchTerm={SearchTerm}, Status={Status}", request.PageNumber, request.PageSize, request.SearchTerm, request.Status);
+
+            var result = await _memberShipService.GetAllList(request);
+            if (result.IsSuccess)
+            {
+                _logger.LogInformation("GetAllMemberships API successful. Total memberships fetched: {Count}", result.Data?.MemberShips?.Count ?? 0);
+            }
+            else
+            {
+                _logger.LogWarning("GetAllMemberships API failed. Message: {Message}", result.Message);
+            }
             return Execute(result);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetMemberShipById([FromRoute] int id)
+        public async Task<IActionResult> GetMemberShipById([FromRoute] int id)
         {
-            var result = _memberShipService.GetById(id);
+            _logger.LogInformation("GetMemberShipById API called. MembershipId={MembershipId}", id);
+
+            var result = await _memberShipService.GetById(id);
+            if (result.IsSuccess)
+            {
+                _logger.LogInformation("GetMemberShipById API completed successfully. MembershipId={MembershipId}", id);
+            }
+            else
+            {
+                _logger.LogWarning("GetMemberShipById API failed. MembershipId={MembershipId}, Message={Message}", id, result.Message);
+            }
             return Execute(result);
         }
         [HttpPost]
-        public IActionResult CreateMemberShip([FromBody] CreateMemberShipRequestModel request)
+        public async Task<IActionResult> CreateMemberShip([FromBody] CreateMemberShipRequestModel request)
         {
-            var result = _memberShipService.Create(request);
+            _logger.LogInformation("CreateMemberShip API called. MemberId={MemberId}, PlanId={PlanId}, Amount={Amount}", request.MemberId, request.MembershipPlanId, request.Amount);
+
+            var result = await _memberShipService.Create(request);
+            if (result.IsSuccess)
+            {
+                _logger.LogInformation("CreateMemberShip API completed successfully. MemberId={MemberId}", request.MemberId);
+            }
+            else
+            {
+                _logger.LogWarning("CreateMemberShip API failed. MemberId={MemberId}, Message={Message}", request.MemberId, result.Message);
+            }
             return Execute(result);
         }
         [HttpPut("{id}")]
-        public IActionResult UpdateMemberShip([FromRoute] int id, [FromBody] UpdateMembershipRequestModel request)
+        public async Task <IActionResult> UpdateMemberShip([FromRoute] int id, [FromBody] UpdateMembershipRequestModel request)
         {
+            _logger.LogInformation("UpdateMemberShip API called. MembershipId={MembershipId}, PlanId={PlanId}", id, request.MembershipPlanId);
+
             if(id != request.MembershipId)
             {
+                _logger.LogWarning("Route ID does not match request body ID. RouteId={RouteId}, BodyId={BodyId}", id, request.MembershipId);
                 return BadRequest("Membership ID in the route does not match the ID in the request body.");
             }
-            var result = _memberShipService.Update(request);
+            var result = await _memberShipService.Update(request);
+            if (result.IsSuccess)
+            {
+                _logger.LogInformation("UpdateMemberShip API completed successfully. MembershipId={MembershipId}", id);
+            }
+            else
+            {
+                _logger.LogWarning("UpdateMemberShip API failed. MembershipId={MembershipId}, Message={Message}", id, result.Message);
+            }
             return Execute(result);
         }
         [HttpDelete("{id}")]
-        public IActionResult DeleteMemberShip([FromRoute] int id)
+        public async Task<IActionResult> DeleteMemberShip([FromRoute] int id)
         {
-            var result = _memberShipService.Delete(id);
+            _logger.LogInformation("DeleteMemberShip API called. MembershipId={MembershipId}", id);
+
+            var result = await _memberShipService.Delete(id);
+            if (result.IsSuccess)
+            {
+                _logger.LogInformation("DeleteMemberShip API completed successfully. MembershipId={MembershipId}", id);
+            }
+            else
+            {
+                _logger.LogWarning("DeleteMemberShip API failed. MembershipId={MembershipId}, Message={Message}", id, result.Message);
+            }
             return Execute(result);
         }
     }

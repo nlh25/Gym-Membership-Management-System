@@ -2,6 +2,7 @@
 using GMMS.Database.AppDbContextModels;
 using GMMS.Domain.Features.MemberShipPlan.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,24 +17,30 @@ namespace GMMS.Domain.Features.MemberShipPlan
         private readonly IValidator<MemberShipPlanlistRequestModel> _listValidator;
         private readonly IValidator<CreateMemberShipPlanRequestModel> _createValidator;
         private readonly IValidator<UpdateMemberShipPlanRequestModel> _updateValidator;
+        private readonly ILogger<MemberShipPlanService> _logger;
 
         public MemberShipPlanService(
             AppDbContext db,
             IValidator<MemberShipPlanlistRequestModel> listValidator,
             IValidator<CreateMemberShipPlanRequestModel> createValidator,
-            IValidator<UpdateMemberShipPlanRequestModel> updateValidator)
+            IValidator<UpdateMemberShipPlanRequestModel> updateValidator,
+            ILogger<MemberShipPlanService> logger)
         {
             _db = db;
             _listValidator = listValidator;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
+            _logger = logger;
         }
 
-        public Result<MemberShipPlanListResponseModel> GetList(MemberShipPlanlistRequestModel request)
+        public async Task<Result<MemberShipPlanListResponseModel>> GetList(MemberShipPlanlistRequestModel request)
         {
-            var validationResult = _listValidator.Validate(request);
+            _logger.LogInformation("Retrieving membership plan list with PageNumber: {PageNumber}, PageSize: {PageSize}", request.PageNumber, request.PageSize);
+
+            var validationResult = await  _listValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
             {
+                _logger.LogWarning("Invalid membership plan list request: {Errors}", string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
                 return new Result<MemberShipPlanListResponseModel>
                 {
                     IsSuccess = false,
@@ -41,34 +48,47 @@ namespace GMMS.Domain.Features.MemberShipPlan
                 };
             }
 
-            try
-            {
+            
                 var query = _db.TblMembershipPlans
                     .AsNoTracking()
                     .Where(x => !x.IsDeleted);
 
-                var totalCount = query.Count();
+                var  totalCount = await query.CountAsync();
 
-                var plans = query
+                var plans = await query
                     .OrderByDescending(x => x.MembershipPlanId)
                     .Skip((request.PageNumber - 1) * request.PageSize)
                     .Take(request.PageSize)
                     .Select(x => new MemberShipPlanModel
                     {
                         MemberShipPlanId = x.MembershipPlanId,
+
                         PlanCode = x.PlanCode,
                         PlanName = x.PlanName,
                         Price = x.Price,
+
                         DurationDays = x.DurationDays,
+
                         IsActive = x.IsActive,
+
                         CreatedAt = x.CreatedAt,
-                        CreatedByUser = x.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == x.CreatedBy).Select(u => u.UserName).FirstOrDefault(),
+
+                        CreatedByUser = x.CreatedBy + " - " + _db.TblUsers
+                        .Where(u => u.UserId == x.CreatedBy)
+                        .Select(u => u.UserName)
+                        .FirstOrDefault(),
+
                         UpdatedAt = x.UpdatedAt,
                         UpdatedByUser = x.UpdatedBy.HasValue
-                            ? x.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == x.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
+                            ? x.UpdatedBy.Value + " - " + _db.TblUsers
+                            .Where(u => u.UserId == x.UpdatedBy.Value)
+                            .Select(u => u.UserName)
+                            .FirstOrDefault()
                             : null
                     })
-                    .ToList();
+                    .ToListAsync();
+
+                _logger.LogInformation("Retrieved {Count} membership plans out of {TotalCount} total.", plans.Count, totalCount);
 
                 return new Result<MemberShipPlanListResponseModel>
                 {
@@ -80,22 +100,15 @@ namespace GMMS.Domain.Features.MemberShipPlan
                         MemberShipPlans = plans
                     }
                 };
-            }
-            catch (Exception ex)
-            {
-                return new Result<MemberShipPlanListResponseModel>
-                {
-                    IsSuccess = false,
-                    Message = ex.Message
-                };
-            }
+            
+            
         }
 
-        public Result<MembershipPlanDetailModel> GetById(int membershipPlanId)
+        public async Task<Result<MembershipPlanDetailModel>> GetById(int membershipPlanId)
         {
-            try
-            {
-                var plan = _db.TblMembershipPlans
+            _logger.LogInformation("Retrieving membership plan with ID: {MembershipPlanId}", membershipPlanId);
+
+                var plan = await _db.TblMembershipPlans
                     .AsNoTracking()
                     .Where(x => !x.IsDeleted && x.MembershipPlanId == membershipPlanId)
                     .Select(x => new MembershipPlanDetailModel
@@ -114,37 +127,35 @@ namespace GMMS.Domain.Features.MemberShipPlan
                             ? x.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == x.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
                             : null
                     })
-                    .FirstOrDefault();
+                    .FirstOrDefaultAsync();
                 if (plan == null)
                 {
+                    _logger.LogWarning("Membership plan with ID: {MembershipPlanId} not found.", membershipPlanId);
                     return new Result<MembershipPlanDetailModel>
                     {
                         IsSuccess = false,
                         Message = "Membership plan not found."
                     };
                 }
+
+                _logger.LogInformation("Membership plan with ID: {MembershipPlanId} retrieved successfully.", membershipPlanId);
                 return new Result<MembershipPlanDetailModel>
                 {
                     IsSuccess = true,
                     Message = "Membership plan retrieved successfully.",
                     Data = plan
                 };
-            }
-            catch (Exception ex)
-            {
-                return new Result<MembershipPlanDetailModel>
-                {
-                    IsSuccess = false,
-                    Message = ex.Message
-                };
-            }
+            
         }
 
-        public Result<MembershipPlanDetailModel> Create(CreateMemberShipPlanRequestModel request)
+        public async Task<Result<MembershipPlanDetailModel>> Create(CreateMemberShipPlanRequestModel request)
         {
-            var validationResult = _createValidator.Validate(request);
+            _logger.LogInformation("Creating membership plan with PlanCode: {PlanCode}, PlanName: {PlanName}", request.PlanCode, request.PlanName);
+
+            var validationResult = await _createValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
             {
+                _logger.LogWarning("Invalid membership plan creation request: {Errors}", string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
                 return new Result<MembershipPlanDetailModel>
                 {
                     IsSuccess = false,
@@ -152,13 +163,17 @@ namespace GMMS.Domain.Features.MemberShipPlan
                 };
             }
 
-            try
-            {
-                var exists = _db.TblMembershipPlans
-                    .Any(x => !x.IsDeleted && x.PlanCode.ToUpper() == request.PlanCode.ToUpperInvariant());
+            var planCode = request.PlanCode.Trim().ToUpperInvariant();
+            var planName = request.PlanName.Trim();
+            var description = request.Description?.Trim();
+
+            var exists = await _db.TblMembershipPlans
+                    .AnyAsync(x => !x.IsDeleted && x.PlanCode == planCode);
+                    
 
                 if (exists)
                 {
+                    _logger.LogWarning("Membership plan with PlanCode: {PlanCode} already exists.", planCode);
                     return new Result<MembershipPlanDetailModel>
                     {
                         IsSuccess = false,
@@ -166,20 +181,24 @@ namespace GMMS.Domain.Features.MemberShipPlan
                     };
                 }
 
-                var plan = new TblMembershipPlan
+                var plan =  new TblMembershipPlan
                 {
-                    PlanCode = request.PlanCode.ToUpperInvariant(),
-                    PlanName = request.PlanName.Trim(),
+                    PlanCode = planCode,
+                    PlanName = planName,
+                    Description = description,
+
                     Price = request.Price,
                     DurationDays = request.DurationDays,
-                    Description = request.Description?.Trim(),
+
                     IsActive = request.IsActive,
                     IsDeleted = false,
                     CreatedAt = DateTime.UtcNow
                 };
 
-                _db.TblMembershipPlans.Add(plan);
-                _db.SaveChanges();
+                await _db.TblMembershipPlans.AddAsync(plan);
+                await _db.SaveChangesAsync();
+
+                _logger.LogInformation("Membership plan created successfully with PlanCode: {PlanCode}, MembershipPlanId: {MembershipPlanId}", planCode, plan.MembershipPlanId);
 
                 return new Result<MembershipPlanDetailModel>
                 {
@@ -197,22 +216,18 @@ namespace GMMS.Domain.Features.MemberShipPlan
                         CreatedByUser = plan.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == plan.CreatedBy).Select(u => u.UserName).FirstOrDefault()
                     }
                 };
-            }
-            catch (Exception ex)
-            {
-                return new Result<MembershipPlanDetailModel>
-                {
-                    IsSuccess = false,
-                    Message = ex.Message
-                };
-            }
+            
+           
         }
 
-        public Result<MembershipPlanDetailModel> Update(int id, UpdateMemberShipPlanRequestModel request)
+        public async Task<Result<MembershipPlanDetailModel>> Update(int id, UpdateMemberShipPlanRequestModel request)
         {
-            var validationResult = _updateValidator.Validate(request);
+            _logger.LogInformation("Updating membership plan with ID: {MembershipPlanId}, PlanCode: {PlanCode}, PlanName: {PlanName}", id, request.PlanCode, request.PlanName);
+
+            var validationResult = await _updateValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
             {
+                _logger.LogWarning("Invalid membership plan update request: {Errors}", string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
                 return new Result<MembershipPlanDetailModel>
                 {
                     IsSuccess = false,
@@ -220,13 +235,16 @@ namespace GMMS.Domain.Features.MemberShipPlan
                 };
             }
 
-            try
-            {
-                var plan = _db.TblMembershipPlans
-                    .Where(x => !x.IsDeleted && x.MembershipPlanId == request.MemberShipPlanId)
-                    .FirstOrDefault();
+            var planCode = request.PlanCode.Trim().ToUpperInvariant();
+            var planName = request.PlanName.Trim();
+            var description = request.Description?.Trim();
+
+            var plan = await _db.TblMembershipPlans
+                    .FirstOrDefaultAsync(x => !x.IsDeleted && x.MembershipPlanId == id);
+
                 if (plan == null)
                 {
+                    _logger.LogWarning("Membership plan with ID: {MembershipPlanId} not found for update.", id);
                     return new Result<MembershipPlanDetailModel>
                     {
                         IsSuccess = false,
@@ -234,10 +252,12 @@ namespace GMMS.Domain.Features.MemberShipPlan
                     };
                 }
 
-                var existsplan = _db.TblMembershipPlans
-                    .Any(x => !x.IsDeleted && x.PlanCode.ToUpper() == request.PlanCode.ToUpperInvariant() && x.MembershipPlanId != request.MemberShipPlanId);
+                var existsplan = await _db.TblMembershipPlans
+                    .AnyAsync(x => !x.IsDeleted && x.PlanCode == planCode && x.MembershipPlanId!= id);
+                    
                 if (existsplan)
                 {
+                    _logger.LogWarning("Membership plan with PlanCode: {PlanCode} already exists.", planCode);
                     return new Result<MembershipPlanDetailModel>
                     {
                         IsSuccess = false,
@@ -245,14 +265,17 @@ namespace GMMS.Domain.Features.MemberShipPlan
                     };
                 }
 
-                plan.PlanCode = request.PlanCode.ToUpperInvariant();
-                plan.PlanName = request.PlanName.Trim();
+                plan.PlanCode = request.PlanCode;
+                plan.PlanName = request.PlanName;
+                plan.Description = request.Description;
                 plan.Price = request.Price;
                 plan.DurationDays = request.DurationDays;
-                plan.Description = request.Description?.Trim();
                 plan.IsActive = request.IsActive;
                 plan.UpdatedAt = DateTime.UtcNow;
-                _db.SaveChanges();
+                await _db.SaveChangesAsync();
+
+                _logger.LogInformation("Membership plan with ID: {MembershipPlanId} updated successfully.", id);
+
                 return new Result<MembershipPlanDetailModel>
                 {
                     IsSuccess = true,
@@ -274,26 +297,18 @@ namespace GMMS.Domain.Features.MemberShipPlan
                             : null
                     }
                 };
-            }
-            catch (Exception ex)
-            {
-                return new Result<MembershipPlanDetailModel>
-                {
-                    IsSuccess = false,
-                    Message = ex.Message
-                };
-            }
+            
         }
 
-        public Result<bool> Delete(int membershipPlanId)
+        public async Task<Result<bool>> Delete(int membershipPlanId)
         {
-            try
-            {
-                var plan = _db.TblMembershipPlans
-                    .Where(x => !x.IsDeleted && x.MembershipPlanId == membershipPlanId)
-                    .FirstOrDefault();
+            _logger.LogInformation("Deleting membership plan with ID: {MembershipPlanId}", membershipPlanId);
+
+            var plan = await _db.TblMembershipPlans
+                .FirstOrDefaultAsync(x => !x.IsDeleted && x.MembershipPlanId == membershipPlanId);
                 if (plan == null)
                 {
+                    _logger.LogWarning("Membership plan with ID: {MembershipPlanId} not found for deletion.", membershipPlanId);
                     return new Result<bool>
                     {
                         IsSuccess = false,
@@ -302,22 +317,17 @@ namespace GMMS.Domain.Features.MemberShipPlan
                 }
                 plan.IsDeleted = true;
                 plan.UpdatedAt = DateTime.UtcNow;
-                _db.SaveChanges();
+                await _db.SaveChangesAsync();
+
+                _logger.LogInformation("Membership plan with ID: {MembershipPlanId} deleted successfully.", membershipPlanId);
+
                 return new Result<bool>
                 {
                     IsSuccess = true,
                     Message = "Membership plan deleted successfully.",
                     Data = true
                 };
-            }
-            catch (Exception ex)
-            {
-                return new Result<bool>
-                {
-                    IsSuccess = false,
-                    Message = ex.Message
-                };
-            }
+            
         }
     }
 }

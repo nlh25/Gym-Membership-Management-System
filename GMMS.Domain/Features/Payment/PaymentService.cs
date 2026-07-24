@@ -2,6 +2,7 @@
 using GMMS.Database.AppDbContextModels;
 using GMMS.Domain.Features.Payment.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,22 +16,28 @@ namespace GMMS.Domain.Features.Payment
         private readonly AppDbContext _db;
         private readonly IValidator<PaymentListRequestModel> _listValidator;
         private readonly IValidator<CreatePaymentRequestModel> _createValidator;
+        private readonly ILogger<PaymentService> _logger;
 
         public PaymentService(
             AppDbContext db,
             IValidator<PaymentListRequestModel> listValidator,
-            IValidator<CreatePaymentRequestModel> createValidator)
+            IValidator<CreatePaymentRequestModel> createValidator,
+            ILogger<PaymentService> logger)
         {
             _db = db;
             _listValidator = listValidator;
             _createValidator = createValidator;
+            _logger = logger;
         }
 
-        public Result<PaymentListResponseModel> GetList(PaymentListRequestModel request)
+        public async Task<Result<PaymentListResponseModel>> GetList(PaymentListRequestModel request)
         {
-            var validationResult = _listValidator.Validate(request);
+            _logger.LogInformation("Retrieving payment list. PageNumber={PageNumber}, PageSize={PageSize}", request.PageNumber, request.PageSize);
+
+            var validationResult = await _listValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
             {
+                _logger.LogWarning("Invalid payment list request: {Errors}", string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
                 return new Result<PaymentListResponseModel>
                 {
                     IsSuccess = false,
@@ -38,16 +45,15 @@ namespace GMMS.Domain.Features.Payment
                 };
             }
 
-            try
-            {
+            
                 var query = _db.TblPayments
                     .AsNoTracking();
 
 
-                var totalCount = query.Count();
+                var totalCount = await  query.CountAsync();
 
 
-                var payments = query
+                var payments = await query
                     .OrderByDescending(x => x.PaymentId)
                     .Skip((request.PageNumber - 1) * request.PageSize)
                     .Take(request.PageSize)
@@ -68,9 +74,10 @@ namespace GMMS.Domain.Features.Payment
                         CreatedAt = x.CreatedAt,
                         CreatedByUser = x.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == x.CreatedBy).Select(u => u.UserName).FirstOrDefault()
                     })
-                    .ToList();
+                    .ToListAsync();
 
 
+                _logger.LogInformation("Payments retrieved successfully. TotalCount={TotalCount}, PagePayments={PagePayments}", totalCount, payments.Count);
                 return new Result<PaymentListResponseModel>
                 {
                     IsSuccess = true,
@@ -81,22 +88,14 @@ namespace GMMS.Domain.Features.Payment
                         Payments = payments
                     }
                 };
-            }
-            catch (Exception ex)
-            {
-                return new Result<PaymentListResponseModel>
-                {
-                    IsSuccess = false,
-                    Message = ex.Message
-                };
-            }
+            
         }
 
-        public Result<PaymentDetailModel> GetById(int paymentId)
+        public async Task< Result<PaymentDetailModel> >GetById(int paymentId)
         {
-            try
-            {
-                var payment = _db.TblPayments
+            _logger.LogInformation("Retrieving payment with ID: {PaymentId}", paymentId);
+
+            var payment = await _db.TblPayments
                     .AsNoTracking()
                     .Where(x => x.PaymentId == paymentId)
                     .Select(x => new PaymentDetailModel
@@ -110,37 +109,34 @@ namespace GMMS.Domain.Features.Payment
                         CreatedAt = x.CreatedAt,
                         CreatedByUser = x.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == x.CreatedBy).Select(u => u.UserName).FirstOrDefault()
                     })
-                    .FirstOrDefault();
+                    .FirstOrDefaultAsync();
                 if (payment == null)
                 {
+                    _logger.LogWarning("Payment with ID: {PaymentId} not found.", paymentId);
                     return new Result<PaymentDetailModel>
                     {
                         IsSuccess = false,
                         Message = "Payment not found."
                     };
                 }
+                _logger.LogInformation("Payment with ID: {PaymentId} retrieved successfully.", paymentId);
                 return new Result<PaymentDetailModel>
                 {
                     IsSuccess = true,
                     Message = "Payment retrieved successfully.",
                     Data = payment
                 };
-            }
-            catch (Exception ex)
-            {
-                return new Result<PaymentDetailModel>
-                {
-                    IsSuccess = false,
-                    Message = ex.Message
-                };
-            }
+            
         }
 
-        public Result<PaymentModel> Create(CreatePaymentRequestModel request)
+        public async Task <Result<PaymentModel>> Create(CreatePaymentRequestModel request)
         {
-            var validationResult = _createValidator.Validate(request);
+            _logger.LogInformation("Creating payment for MembershipId={MembershipId}, Amount={Amount}, PaymentMethodId={PaymentMethodId}", request.MembershipId, request.Amount, request.PaymentMethodId);
+
+            var validationResult = await _createValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
             {
+                _logger.LogWarning("Invalid payment creation request: {Errors}", string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
                 return new Result<PaymentModel>
                 {
                     IsSuccess = false,
@@ -148,12 +144,11 @@ namespace GMMS.Domain.Features.Payment
                 };
             }
 
-            try
-            {
-                var payment = _db.TblPayments
-                    .FirstOrDefault(x => x.MembershipId == request.MembershipId && x.Status == "Pending");
+             var payment = await _db.TblPayments
+                    .FirstOrDefaultAsync(x => x.MembershipId == request.MembershipId && x.Status == "Pending");
                 if (payment != null)
                 {
+                    _logger.LogWarning("A pending payment already exists for MembershipId={MembershipId}.", request.MembershipId);
                     return new Result<PaymentModel>
                     {
                         IsSuccess = false,
@@ -161,11 +156,12 @@ namespace GMMS.Domain.Features.Payment
                     };
                 }
 
-                var PaymentMethod = _db.TblPaymentMethods
-                    .FirstOrDefault(x => x.PaymentMethodId == request.PaymentMethodId && !x.IsDeleted && x.IsActive);
+                var PaymentMethod = await _db.TblPaymentMethods
+                    .FirstOrDefaultAsync(x => x.PaymentMethodId == request.PaymentMethodId && !x.IsDeleted && x.IsActive);
                      
                 if (PaymentMethod == null)
                 {
+                    _logger.LogWarning("Payment method not found or inactive. PaymentMethodId={PaymentMethodId}", request.PaymentMethodId);
                     return new Result<PaymentModel>
                     {
                         IsSuccess = false,
@@ -173,10 +169,11 @@ namespace GMMS.Domain.Features.Payment
                     };
                 }
                 
-                var membership = _db.TblMemberships
-                    .FirstOrDefault(x => x.MembershipId == request.MembershipId && !x.IsDeleted);
+                var membership = await _db.TblMemberships
+                    .FirstOrDefaultAsync(x => x.MembershipId == request.MembershipId && !x.IsDeleted);
                 if (membership == null)
                 {
+                    _logger.LogWarning("Membership not found. MembershipId={MembershipId}", request.MembershipId);
                     return new Result<PaymentModel>
                     {
                         IsSuccess = false,
@@ -195,22 +192,18 @@ namespace GMMS.Domain.Features.Payment
                     CreatedAt = DateTime.UtcNow
                 };
 
-                _db.TblPayments.Add(newPayment);
-                _db.SaveChanges();
+                await _db.TblPayments.AddAsync(newPayment);
+                await _db.SaveChangesAsync();
+
+                _logger.LogInformation("Payment created successfully. PaymentId={PaymentId}, MembershipId={MembershipId}", newPayment.PaymentId, request.MembershipId);
+
                 return new Result<PaymentModel>
                 {
                     IsSuccess = true,
                     Message = "Payment created successfully."
                 };
-            }
-            catch (Exception ex)
-            {
-                return new Result<PaymentModel>
-                {
-                    IsSuccess = false,
-                    Message = ex.Message
-                };
-            }
+            
+           
         }
     }
 }

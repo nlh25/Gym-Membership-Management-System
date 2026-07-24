@@ -2,6 +2,7 @@
 using GMMS.Database.AppDbContextModels;
 using GMMS.Domain.Features.PaymentMethod.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,24 +17,30 @@ namespace GMMS.Domain.Features.PaymentMethod
         private readonly IValidator<PaymentMethodListRequestModel> _listValidator;
         private readonly IValidator<PaymentMethodCreateRequestModel> _createValidator;
         private readonly IValidator<PaymentMethodUpdateRequestModel> _updateValidator;
+        private readonly ILogger<PaymentMethodService> _logger;
 
         public PaymentMethodService(
             AppDbContext db,
             IValidator<PaymentMethodListRequestModel> listValidator,
             IValidator<PaymentMethodCreateRequestModel> createValidator,
-            IValidator<PaymentMethodUpdateRequestModel> updateValidator)
+            IValidator<PaymentMethodUpdateRequestModel> updateValidator,
+            ILogger<PaymentMethodService> logger)
         {
             _db = db;
             _listValidator = listValidator;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
+            _logger = logger;
         }
 
-        public Result<PaymentMethodListResponseModel> GetList(PaymentMethodListRequestModel request)
+        public async Task<Result<PaymentMethodListResponseModel>> GetList(PaymentMethodListRequestModel request)
         {
-            var validationResult = _listValidator.Validate(request);
+            _logger.LogInformation("Retrieving payment method list with PageNumber: {PageNumber}, PageSize: {PageSize}", request.PageNumber, request.PageSize);
+
+            var validationResult = await _listValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
             {
+                _logger.LogWarning("Invalid payment method list request: {Errors}", string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
                 return new Result<PaymentMethodListResponseModel>
                 {
                     IsSuccess = false,
@@ -41,14 +48,13 @@ namespace GMMS.Domain.Features.PaymentMethod
                 };
             }
 
-            try
-            {
+            
                 var query = _db.TblPaymentMethods
                     .AsNoTracking()
                     .Where(x => !x.IsDeleted);
 
-                var totalCount = query.Count();
-                var paymentMethods = query
+                var totalCount = await query.CountAsync();
+                var paymentMethods = await query
 
                     .OrderByDescending(x => x.PaymentMethodId)
                     .Skip((request.PageNumber - 1) * request.PageSize)
@@ -66,7 +72,9 @@ namespace GMMS.Domain.Features.PaymentMethod
                             ? x.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == x.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
                             : null
                     })
-                    .ToList();
+                    .ToListAsync();
+
+                _logger.LogInformation("Retrieved {Count} payment methods out of {TotalCount} total.", paymentMethods.Count, totalCount);
 
                 return new Result<PaymentMethodListResponseModel>
                 {
@@ -78,22 +86,14 @@ namespace GMMS.Domain.Features.PaymentMethod
                         PaymentMethods = paymentMethods
                     }
                 };
-            }
-            catch (Exception ex)
-            {
-                return new Result<PaymentMethodListResponseModel>
-                {
-                    IsSuccess = false,
-                    Message = ex.Message
-                };
-            }
+            
         }
 
-        public Result<PaymentMethodModel> GetById(int paymentMethodId)
+        public async Task<Result<PaymentMethodModel>> GetById(int paymentMethodId)
         {
-            try
-            {
-                var paymentMethod = _db.TblPaymentMethods
+            _logger.LogInformation("Retrieving payment method with ID: {PaymentMethodId}", paymentMethodId);
+
+                var paymentMethod = await _db.TblPaymentMethods
                     .AsNoTracking()
                     .Where(x => x.PaymentMethodId == paymentMethodId && !x.IsDeleted)
                     .Select(x => new PaymentMethodModel
@@ -109,10 +109,11 @@ namespace GMMS.Domain.Features.PaymentMethod
                             ? x.UpdatedBy.Value + " - " + _db.TblUsers.Where(u => u.UserId == x.UpdatedBy.Value).Select(u => u.UserName).FirstOrDefault()
                             : null
                     })
-                    .FirstOrDefault();
+                    .FirstOrDefaultAsync();
 
                 if (paymentMethod == null)
                 {
+                    _logger.LogWarning("Payment method with ID: {PaymentMethodId} not found.", paymentMethodId);
                     return new Result<PaymentMethodModel>
                     {
                         IsSuccess = false,
@@ -120,28 +121,24 @@ namespace GMMS.Domain.Features.PaymentMethod
                     };
                 }
 
+                _logger.LogInformation("Payment method with ID: {PaymentMethodId} retrieved successfully.", paymentMethodId);
                 return new Result<PaymentMethodModel>
                 {
                     IsSuccess = true,
                     Message = "Payment method retrieved successfully.",
                     Data = paymentMethod
                 };
-            }
-            catch (Exception ex)
-            {
-                return new Result<PaymentMethodModel>
-                {
-                    IsSuccess = false,
-                    Message = ex.Message
-                };
-            }
+            
         }
 
-        public Result<PaymentMethodModel> Create(PaymentMethodCreateRequestModel request)
+        public async Task <Result<PaymentMethodModel>> Create(PaymentMethodCreateRequestModel request)
         {
-            var validationResult = _createValidator.Validate(request);
+            _logger.LogInformation("Creating payment method with PaymentMethodCode: {PaymentMethodCode}, Name: {Name}", request.PaymentMethodCode, request.Name);
+
+            var validationResult = await _createValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
             {
+                _logger.LogWarning("Invalid payment method creation request: {Errors}", string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
                 return new Result<PaymentMethodModel>
                 {
                     IsSuccess = false,
@@ -149,12 +146,14 @@ namespace GMMS.Domain.Features.PaymentMethod
                 };
             }
 
-            try
-            {
-                var exists = _db.TblPaymentMethods
-                    .Any(x => !x.IsDeleted && x.PaymentMethodCode.ToUpper() == request.PaymentMethodCode.ToUpperInvariant());
+            
+                var exists = await _db.TblPaymentMethods
+                    .AnyAsync(x => !x.IsDeleted && x.PaymentMethodCode
+                    .ToUpper() == request.PaymentMethodCode
+                    .ToUpperInvariant());
                 if (exists)
                 {
+                    _logger.LogWarning("Payment method with code: {PaymentMethodCode} already exists.", request.PaymentMethodCode);
                     return new Result<PaymentMethodModel>
                     {
                         IsSuccess = false,
@@ -169,8 +168,11 @@ namespace GMMS.Domain.Features.PaymentMethod
                     IsDeleted = false,
                     CreatedAt = DateTime.UtcNow
                 };
-                _db.TblPaymentMethods.Add(paymentMethod);
-                _db.SaveChanges();
+                await _db.TblPaymentMethods.AddAsync(paymentMethod);
+                await _db.SaveChangesAsync();
+
+                _logger.LogInformation("Payment method created successfully with PaymentMethodId: {PaymentMethodId}", paymentMethod.PaymentMethodId);
+
                 return new Result<PaymentMethodModel>
                 {
                     IsSuccess = true,
@@ -185,22 +187,17 @@ namespace GMMS.Domain.Features.PaymentMethod
                         CreatedByUser = paymentMethod.CreatedBy + " - " + _db.TblUsers.Where(u => u.UserId == paymentMethod.CreatedBy).Select(u => u.UserName).FirstOrDefault()
                     }
                 };
-            }
-            catch (Exception ex)
-            {
-                return new Result<PaymentMethodModel>
-                {
-                    IsSuccess = false,
-                    Message = ex.Message
-                };
-            }
+           
         }
 
-        public Result<PaymentMethodModel> Update(int id, PaymentMethodUpdateRequestModel request)
+        public async Task<Result<PaymentMethodModel>> Update(int id, PaymentMethodUpdateRequestModel request)
         {
-            var validationResult = _updateValidator.Validate(request);
+            _logger.LogInformation("Updating payment method with ID: {PaymentMethodId}, Code: {PaymentMethodCode}, Name: {Name}", id, request.PaymentMethodCode, request.Name);
+
+            var validationResult = await _updateValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
             {
+                _logger.LogWarning("Invalid payment method update request: {Errors}", string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
                 return new Result<PaymentMethodModel>
                 {
                     IsSuccess = false,
@@ -208,23 +205,24 @@ namespace GMMS.Domain.Features.PaymentMethod
                 };
             }
 
-            try
-            {
-                var paymentMethod = _db.TblPaymentMethods
+            
+                var paymentMethod = await _db.TblPaymentMethods
                     .Where(x => x.PaymentMethodId == request.PaymentMethodId && !x.IsDeleted)
-                    .FirstOrDefault();
+                    .FirstOrDefaultAsync();
                 if (paymentMethod == null)
                 {
+                    _logger.LogWarning("Payment method with ID: {PaymentMethodId} not found for update.", request.PaymentMethodId);
                     return new Result<PaymentMethodModel>
                     {
                         IsSuccess = false,
                         Message = "Payment method not found."
                     };
                 }
-                var exists = _db.TblPaymentMethods
-                    .Any(x => !x.IsDeleted && x.PaymentMethodCode.ToUpper() == request.PaymentMethodCode.ToUpperInvariant() && x.PaymentMethodId != request.PaymentMethodId);
+                var exists = await _db.TblPaymentMethods
+                    .AnyAsync(x => !x.IsDeleted && x.PaymentMethodCode.ToUpper() == request.PaymentMethodCode.ToUpperInvariant() && x.PaymentMethodId != request.PaymentMethodId);
                 if (exists)
                 {
+                    _logger.LogWarning("Payment method with code: {PaymentMethodCode} already exists.", request.PaymentMethodCode);
                     return new Result<PaymentMethodModel>
                     {
                         IsSuccess = false,
@@ -236,7 +234,10 @@ namespace GMMS.Domain.Features.PaymentMethod
                 paymentMethod.Name = request.Name.Trim();
                 paymentMethod.IsActive = request.IsActive;
                 paymentMethod.UpdatedAt = DateTime.UtcNow;
-                _db.SaveChanges();
+                await _db.SaveChangesAsync();
+
+                _logger.LogInformation("Payment method with ID: {PaymentMethodId} updated successfully.", request.PaymentMethodId);
+
                 return new Result<PaymentMethodModel>
                 {
                     IsSuccess = true,
@@ -255,26 +256,21 @@ namespace GMMS.Domain.Features.PaymentMethod
                             : null
                     }
                 };
-            }
-            catch (Exception ex)
-            {
-                return new Result<PaymentMethodModel>
-                {
-                    IsSuccess = false,
-                    Message = ex.Message
-                };
-            }
+            
+           
         }
 
-        public Result<bool> Delete(int paymentMethodId)
+        public async Task <Result<bool>> Delete(int paymentMethodId)
         {
-            try
-            {
-                var paymentMethod = _db.TblPaymentMethods
+            _logger.LogInformation("Deleting payment method with ID: {PaymentMethodId}", paymentMethodId);
+
+            
+                var paymentMethod = await _db.TblPaymentMethods
                     .Where(x => x.PaymentMethodId == paymentMethodId && !x.IsDeleted)
-                    .FirstOrDefault();
+                    .FirstOrDefaultAsync();
                 if (paymentMethod == null)
                 {
+                    _logger.LogWarning("Payment method with ID: {PaymentMethodId} not found for deletion.", paymentMethodId);
                     return new Result<bool>
                     {
                         IsSuccess = false,
@@ -283,23 +279,17 @@ namespace GMMS.Domain.Features.PaymentMethod
                 }
                 paymentMethod.IsDeleted = true;
                 paymentMethod.UpdatedAt = DateTime.UtcNow;
-                _db.SaveChanges();
+                await _db.SaveChangesAsync();
+
+                _logger.LogInformation("Payment method with ID: {PaymentMethodId} deleted successfully.", paymentMethodId);
+
                 return new Result<bool>
                 {
                     IsSuccess = true,
                     Message = "Payment method deleted successfully.",
                     Data = true
                 };
-            }
-            catch (Exception ex)
-            {
-                return new Result<bool>
-                {
-                    IsSuccess = false,
-                    Message = ex.Message,
-                    Data = false
-                };
-            }
+            
         }
     }
 }

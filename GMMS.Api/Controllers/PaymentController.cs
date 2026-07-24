@@ -10,26 +10,59 @@ namespace GMMS.Api.Controllers
     public class PaymentController : BaseController
     {
         private readonly PaymentService _paymentService;
-        public PaymentController(PaymentService paymentService)
+        private readonly ILogger<PaymentController> _logger;
+
+        public PaymentController(PaymentService paymentService, ILogger<PaymentController> logger)
         {
             _paymentService = paymentService;
+            _logger = logger;
         }
         [HttpGet]
-        public IActionResult PaymentList([FromQuery] PaymentListRequestModel request)
+        public async Task <IActionResult> PaymentList([FromQuery] PaymentListRequestModel request)
         {
-            var result = _paymentService.GetList(request);
+            _logger.LogInformation("PaymentList API called. PageNumber={PageNumber}, PageSize={PageSize}", request.PageNumber, request.PageSize);
+
+            var result = await _paymentService.GetList(request);
+            if (result.IsSuccess)
+            {
+                _logger.LogInformation("PaymentList API successful. TotalCount={TotalCount}", result.Data?.TotalCount ?? 0);
+            }
+            else
+            {
+                _logger.LogWarning("PaymentList API failed. Message={Message}", result.Message);
+            }
             return Execute(result);
         }
         [HttpGet("{id}")]
-        public IActionResult GetPaymentDetail(int id)
+        public async Task <IActionResult> GetPaymentDetail(int id)
         {
-            var result = _paymentService.GetById(id);
+            _logger.LogInformation("GetPaymentDetail API called. PaymentId={PaymentId}", id);
+
+            var result = await _paymentService.GetById(id);
+            if (result.IsSuccess)
+            {
+                _logger.LogInformation("GetPaymentDetail API completed successfully. PaymentId={PaymentId}", id);
+            }
+            else
+            {
+                _logger.LogWarning("GetPaymentDetail API failed. PaymentId={PaymentId}, Message={Message}", id, result.Message);
+            }
             return Execute(result);
         }
         [HttpPost]
-        public IActionResult CreatePayment([FromBody] CreatePaymentRequestModel request)
+        public async Task <IActionResult> CreatePayment([FromBody] CreatePaymentRequestModel request)
         {
-            var result = _paymentService.Create(request);
+            _logger.LogInformation("CreatePayment API called. MembershipId={MembershipId}, Amount={Amount}", request.MembershipId, request.Amount);
+
+            var result = await _paymentService.Create(request);
+            if (result.IsSuccess)
+            {
+                _logger.LogInformation("CreatePayment API completed successfully. MembershipId={MembershipId}", request.MembershipId);
+            }
+            else
+            {
+                _logger.LogWarning("CreatePayment API failed. Message={Message}", result.Message);
+            }
             return Execute(result);
         }
     }

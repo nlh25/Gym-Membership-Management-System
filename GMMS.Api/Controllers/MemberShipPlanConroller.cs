@@ -10,43 +10,96 @@ namespace GMMS.Api.Controllers
     public class MemberShipPlanController : BaseController
     {
         private readonly MemberShipPlanService _memberShipPlanService;
+        private readonly ILogger<MemberShipPlanController> _logger;
 
-        public MemberShipPlanController(MemberShipPlanService memberShipPlanService)
+        public MemberShipPlanController(MemberShipPlanService memberShipPlanService, ILogger<MemberShipPlanController> logger)
         {
             _memberShipPlanService = memberShipPlanService;
+            _logger = logger;
         }
         [HttpGet]
-        public IActionResult MemberShipPlanList([FromQuery] MemberShipPlanlistRequestModel request)
+        public async Task<IActionResult> MemberShipPlanList([FromQuery] MemberShipPlanlistRequestModel request)
         {
-            var result = _memberShipPlanService.GetList(request);
+            _logger.LogInformation("MemberShipPlanList API called. Page={PageNumber}, PageSize={PageSize}", request.PageNumber, request.PageSize);
+
+            var result = await _memberShipPlanService.GetList(request);
+            if (result.IsSuccess)
+            {
+                _logger.LogInformation("MemberShipPlanList API successful. Total plans fetched: {Count}", result.Data?.MemberShipPlans?.Count ?? 0);
+            }
+            else
+            {
+                _logger.LogWarning("MemberShipPlanList API failed. Message: {Message}", result.Message);
+            }
             return Execute(result);
         }
         [HttpGet("{id}")]
-        public IActionResult MemberShipPlanById([FromRoute] int id)
+        public async Task<IActionResult> MemberShipPlanById([FromRoute] int id)
         {
-            var result = _memberShipPlanService.GetById(id);
-            return Execute(result);
+            _logger.LogInformation("MemberShipPlanById API called. MembershipPlanId={MembershipPlanId}", id);
+
+            var result = await _memberShipPlanService.GetById(id);
+            if (result.IsSuccess)
+            {
+                _logger.LogInformation("MemberShipPlanById API completed successfully. MembershipPlanId={MembershipPlanId}", id);
+            }
+            else
+            {
+                _logger.LogWarning("MemberShipPlanById API failed. MembershipPlanId={MembershipPlanId}, Message={Message}", id, result.Message);
+            }
+            return Execute(result); 
         }
         [HttpPost]
-        public IActionResult CreateMemberShipPlan([FromBody] CreateMemberShipPlanRequestModel request)
+        public async Task<IActionResult> CreateMemberShipPlan([FromBody] CreateMemberShipPlanRequestModel request)
         {
-            var result = _memberShipPlanService.Create(request);
+            _logger.LogInformation("CreateMemberShipPlan API called. PlanCode={PlanCode}, PlanName={PlanName}", request.PlanCode, request.PlanName);
+
+            var result = await _memberShipPlanService.Create(request);
+            if (result.IsSuccess)
+            {
+                _logger.LogInformation("CreateMemberShipPlan API completed successfully. PlanCode={PlanCode}", request.PlanCode);
+            }
+            else
+            {
+                _logger.LogWarning("CreateMemberShipPlan API failed. Message={Message}", result.Message);
+            }
             return Execute(result);
         }
         [HttpPut("{id}")]
-        public IActionResult UpdateMemberShipPlan([FromRoute] int id, [FromBody] UpdateMemberShipPlanRequestModel request)
+        public async Task<IActionResult> UpdateMemberShipPlan([FromRoute] int id, [FromBody] UpdateMemberShipPlanRequestModel request)
         {
+            _logger.LogInformation("UpdateMemberShipPlan API called. MembershipPlanId={MembershipPlanId}, PlanCode={PlanCode}", id, request.PlanCode);
+
             if (id != request.MemberShipPlanId)
             {
+                _logger.LogWarning("Route ID does not match request body ID. RouteId={RouteId}, BodyId={BodyId}", id, request.MemberShipPlanId);
                 return BadRequest("Member ID in the route does not match the ID in the request body.");
             }
-            var result = _memberShipPlanService.Update(id, request);
+            var result = await _memberShipPlanService.Update(id, request);
+            if (result.IsSuccess)
+            {
+                _logger.LogInformation("UpdateMemberShipPlan API completed successfully. MembershipPlanId={MembershipPlanId}", id);
+            }
+            else
+            {
+                _logger.LogWarning("UpdateMemberShipPlan API failed. MembershipPlanId={MembershipPlanId}, Message={Message}", id, result.Message);
+            }
             return Execute(result);
         }
         [HttpDelete("{id}")]
-        public IActionResult DeleteMemberShipPlan([FromRoute] int id)
+        public async Task<IActionResult> DeleteMemberShipPlan([FromRoute] int id)
         {
-            var result = _memberShipPlanService.Delete(id);
+            _logger.LogInformation("DeleteMemberShipPlan API called. MembershipPlanId={MembershipPlanId}", id);
+
+            var result = await _memberShipPlanService.Delete(id);
+            if (result.IsSuccess)
+            {
+                _logger.LogInformation("DeleteMemberShipPlan API completed successfully. MembershipPlanId={MembershipPlanId}", id);
+            }
+            else
+            {
+                _logger.LogWarning("DeleteMemberShipPlan API failed. MembershipPlanId={MembershipPlanId}, Message={Message}", id, result.Message);
+            }
             return Execute(result);
         }
     }
