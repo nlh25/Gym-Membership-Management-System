@@ -3,6 +3,7 @@ using GMMS.Database.AppDbContextModels;
 using GMMS.Domain.Features.Auth.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -16,24 +17,30 @@ public class AuthService
     private readonly IConfiguration _configuration;
     private readonly IValidator<LoginRequestModel> _loginValidator;
     private readonly IValidator<ChangePasswordRequestModel> _changePasswordValidator;
+    private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         AppDbContext db,
         IConfiguration configuration,
         IValidator<LoginRequestModel> loginValidator,
-        IValidator<ChangePasswordRequestModel> changePasswordValidator)
+        IValidator<ChangePasswordRequestModel> changePasswordValidator,
+        ILogger<AuthService> logger)
     {
         _db = db;
         _configuration = configuration;
         _loginValidator = loginValidator;
         _changePasswordValidator = changePasswordValidator;
+        _logger = logger;
     }
 
     public async Task <Result<LoginResponseModel>> Login(LoginRequestModel request)
     {
+        _logger.LogInformation("Login attempt for UserName: {UserName}", request.UserName);
+
         var validationResult =  await _loginValidator.ValidateAsync(request);
         if (!validationResult.IsValid)
         {
+            _logger.LogWarning("Invalid login request for UserName: {UserName}. Errors: {Errors}", request.UserName, string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
             return new Result<LoginResponseModel>
             {
                 IsSuccess = false,
@@ -41,12 +48,13 @@ public class AuthService
             };
         }
 
-       
+        
             var user = await _db.TblUsers
                 .FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == request.UserName && x.IsActive);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             {
+                _logger.LogWarning("Login failed for UserName: {UserName} - invalid credentials.", request.UserName);
                 return new Result<LoginResponseModel>
                 {
                     IsSuccess = false,
@@ -54,11 +62,12 @@ public class AuthService
                 };
             }
 
-           
+            
 
             var tokenResult = await GenerateToken(user);
             if (!tokenResult.IsSuccess)
             {
+                _logger.LogWarning("Token generation failed for UserId: {UserId}. Message: {Message}", user.UserId, tokenResult.Message);
                 return new Result<LoginResponseModel>
                 {
                     IsSuccess = false,
@@ -77,6 +86,8 @@ public class AuthService
             await _db.TblUserSessions.AddAsync(session);
             await _db.SaveChangesAsync();
 
+            _logger.LogInformation("Login successful for UserId: {UserId}, UserName: {UserName}", user.UserId, request.UserName);
+
             return new Result<LoginResponseModel>
             {
                 IsSuccess = true,
@@ -88,9 +99,12 @@ public class AuthService
 
     public async Task<Result<bool>> ChangePassword(int userId, ChangePasswordRequestModel request)
     {
+        _logger.LogInformation("Change password attempt for UserId: {UserId}", userId);
+
         var validationResult = await _changePasswordValidator.ValidateAsync(request);
         if (!validationResult.IsValid)
         {
+            _logger.LogWarning("Invalid change password request for UserId: {UserId}. Errors: {Errors}", userId, string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
             return new Result<bool>
             {
                 IsSuccess = false,
@@ -98,12 +112,13 @@ public class AuthService
             };
         }
 
-       
+        
             var user = await _db.TblUsers
                 .FirstOrDefaultAsync(x => !x.IsDeleted && x.UserId == userId && x.IsActive);
 
             if (user == null)
             {
+                _logger.LogWarning("User with ID: {UserId} not found for password change.", userId);
                 return new Result<bool>
                 {
                     IsSuccess = false,
@@ -113,6 +128,7 @@ public class AuthService
 
             if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
             {
+                _logger.LogWarning("Incorrect current password for UserId: {UserId}.", userId);
                 return new Result<bool>
                 {
                     IsSuccess = false,
@@ -124,6 +140,8 @@ public class AuthService
             user.MustChangePassword = false;
             user.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
+
+            _logger.LogInformation("Password changed successfully for UserId: {UserId}", userId);
 
             return new Result<bool>
             {
