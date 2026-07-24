@@ -18,6 +18,34 @@ using Serilog;
 using System.Text;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using System.Text.Json;
+using System.Linq;
+
+// Health check that uses AppDbContext to verify DB connectivity
+public class DbHealthCheck : IHealthCheck
+{
+    private readonly IServiceProvider _provider;
+
+    public DbHealthCheck(IServiceProvider provider)
+    {
+        _provider = provider;
+    }
+
+    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var scope = _provider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var canConnect = await db.Database.CanConnectAsync(cancellationToken);
+            return canConnect ? HealthCheckResult.Healthy("Database reachable") : HealthCheckResult.Unhealthy("Cannot connect to database");
+        }
+        catch (Exception ex)
+        {
+            return HealthCheckResult.Unhealthy(ex.Message, ex);
+        }
+    }
+}
 
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(new ConfigurationBuilder()
@@ -36,8 +64,9 @@ try
  // Add services to the container.
 
  builder.Services.AddControllers();
- // Health checks (basic) — can be extended to check DB, external deps, etc.
- builder.Services.AddHealthChecks();
+ // Health checks (basic) — extended with DB connectivity check
+ builder.Services.AddHealthChecks()
+     .AddCheck<DbHealthCheck>("database");
  // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
  builder.Services.AddEndpointsApiExplorer();
  builder.Services.AddSwaggerGen(options =>
@@ -129,8 +158,27 @@ try
  app.UseAuthentication();
  app.UseAuthorization();
 
- // Map health endpoint
- app.MapHealthChecks("/health");
+ // Map health endpoint with JSON response
+ app.MapHealthChecks("/health", new HealthCheckOptions
+ {
+     ResponseWriter = async (context, report) =>
+     {
+         context.Response.ContentType = "application/json";
+         var result = JsonSerializer.Serialize(new
+         {
+             status = report.Status.ToString(),
+             checks = report.Entries.Select(e => new
+             {
+                 name = e.Key,
+                 status = e.Value.Status.ToString(),
+                 description = e.Value.Description,
+                 exception = e.Value.Exception?.Message,
+                 duration = e.Value.Duration.TotalMilliseconds
+             })
+         });
+         await context.Response.WriteAsync(result);
+     }
+ });
 
  app.MapControllers();
 
